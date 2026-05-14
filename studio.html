@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Content Studio | Gegventures</title>
+  <meta name="description" content="The Gegventures AI content studio drafts HIPAA-compliant SEO pages, blog posts, and ad copy that attract new patients to Garcia Family Medicine." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="index.html"><span class="brand__mark">G</span> Gegventures</a>
+      <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <nav class="nav">
+        <a href="index.html">Home</a>
+        <a href="services.html">Services</a>
+        <a href="about.html">About</a>
+        <a href="studio.html" class="is-active">AI Studio</a>
+        <a href="contact.html">Contact</a>
+        <a href="contact.html" class="btn btn--primary">Free Consultation</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="page-hero">
+      <div class="wrap">
+        <span class="eyebrow">AI Content Studio</span>
+        <h1>Patient-attracting content, drafted in seconds</h1>
+        <p class="lead">The other half of the patient-growth engine: an AI studio that drafts HIPAA-compliant SEO pages, blog posts, and ad copy for Garcia Family Medicine &mdash; ready for a marketer to review and publish.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap">
+        <div class="ai-banner" id="aiBanner" hidden>
+          The AI backend isn't configured yet. Add an <code>ANTHROPIC_API_KEY</code>
+          to your <code>.env</code> file and restart the server to enable generation.
+        </div>
+
+        <div class="studio">
+          <form class="studio__form" id="studioForm">
+            <div class="field">
+              <label for="contentType">Content type</label>
+              <select id="contentType" name="contentType">
+                <option value="seo-page">SEO service / landing page</option>
+                <option value="blog-post">Patient education blog post</option>
+                <option value="ad-copy">Paid search &amp; social ad copy</option>
+                <option value="gbp-post">Google Business Profile post</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="topic">Topic or focus</label>
+              <input
+                id="topic"
+                name="topic"
+                type="text"
+                placeholder="e.g. Annual physicals for new patients"
+                required
+              />
+            </div>
+            <div class="field">
+              <label for="location">Target location <span style="font-weight:400;color:var(--ink-soft)">(optional)</span></label>
+              <input id="location" name="location" type="text" placeholder="e.g. Austin, TX" />
+            </div>
+            <div class="field">
+              <label for="details">Additional direction <span style="font-weight:400;color:var(--ink-soft)">(optional)</span></label>
+              <textarea
+                id="details"
+                name="details"
+                placeholder="Audience, tone, key points to include, keywords to target…"
+              ></textarea>
+            </div>
+            <button type="submit" class="btn btn--primary" id="studioRun">Generate content</button>
+            <p class="form-note" id="studioStatus" role="status"></p>
+          </form>
+
+          <div class="studio__result">
+            <div class="studio__result-head">
+              <h3>Draft</h3>
+              <button type="button" class="btn btn--ghost" id="studioCopy" hidden>Copy</button>
+            </div>
+            <pre class="studio__output" id="studioOutput" hidden></pre>
+            <p class="studio__empty" id="studioEmpty">
+              Your generated draft will appear here. Everything is a starting point &mdash;
+              review for accuracy and brand voice before publishing.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section--warm">
+      <div class="wrap">
+        <div class="cta-band">
+          <h2>This is how Gegventures generates patients at scale</h2>
+          <p>An AI assistant that converts visitors, plus a content engine that brings them in.</p>
+          <div class="hero__cta">
+            <a href="garcia-family-medicine.html" class="btn btn--light">See the patient assistant</a>
+            <a href="contact.html" class="btn btn--outline-light">Get this for your practice</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="footer-grid">
+        <div>
+          <a class="brand" href="index.html"><span class="brand__mark">G</span> Gegventures</a>
+          <p class="footer-about">
+            HIPAA-compliant digital marketing for private medical and healthcare
+            providers. Data-driven strategy, transparent reporting, real results.
+          </p>
+        </div>
+        <div>
+          <h4>Company</h4>
+          <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="about.html">About</a></li>
+            <li><a href="services.html">Services</a></li>
+            <li><a href="contact.html">Contact</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>AI tools</h4>
+          <ul>
+            <li><a href="garcia-family-medicine.html">Patient assistant</a></li>
+            <li><a href="studio.html">Content studio</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Serving</h4>
+          <ul>
+            <li>Houston</li>
+            <li>Los Angeles</li>
+            <li>New York</li>
+            <li>Nationwide &amp; remote</li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>&copy; <span data-year>2026</span> Gegventures. All rights reserved.</span>
+        <span>HIPAA-compliant &middot; Business Associate Agreements available</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/studio.js"></script>
+</body>
+</html>
