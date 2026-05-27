@@ -1,0 +1,120 @@
+/* IME Studio — Dr. Tess Missouri PPD drafter */
+
+.ime-studio { grid-template-columns: 1fr 1fr; }
+
+@media (max-width: 1100px) {
+  .ime-studio { grid-template-columns: 1fr; }
+}
+
+.ime-disclaimer {
+  background: var(--accent-soft);
+  border-left: 4px solid var(--accent);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-bottom: 28px;
+  font-size: 0.95rem;
+  color: var(--ink);
+  line-height: 1.6;
+}
+.ime-disclaimer strong { color: var(--accent-dark); }
+
+.ime-section-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 18px 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line);
+}
+.ime-section-title:first-child { margin-top: 0; }
+
+.field { margin-bottom: 14px; }
+.field label {
+  display: block;
+  font-weight: 700;
+  font-size: 0.9rem;
+  margin-bottom: 6px;
+  color: var(--ink);
+}
+.field__hint {
+  font-weight: 400;
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+}
+.field input,
+.field textarea,
+.field select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font: inherit;
+  color: var(--ink);
+  background: #fff;
+  resize: vertical;
+}
+.field input:focus,
+.field textarea:focus,
+.field select:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.field textarea {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 700px) {
+  .field-row { grid-template-columns: 1fr; }
+}
+
+.form-note {
+  margin-top: 10px;
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+  min-height: 1.2em;
+}
+
+.ime-output { max-height: 75vh; }
+
+.ime-result-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.ime-ref { max-width: 980px; margin: 0 auto; }
+.ime-ref h2 { margin-bottom: 8px; }
+.ime-ref > p { margin-bottom: 24px; }
+.ime-ref__grid h4 {
+  font-size: 1rem;
+  margin-bottom: 8px;
+  color: var(--accent-dark);
+}
+.ime-ref__grid ul {
+  list-style: none;
+  padding: 0;
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+  line-height: 1.9;
+}
+.ime-ref__note {
+  margin-top: 10px;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  font-style: italic;
+}
+.ime-ref__cite {
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}

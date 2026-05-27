@@ -137,6 +137,123 @@ app.post('/api/chat', async (req, res) => {
   );
 });
 
+// IME report drafter for Dr. Tess. Takes a clinical case packet
+// (demographics, history, records summary, physical exam, imaging,
+// prior treatment) and returns a structured IME draft including a
+// reasoned discussion of permanent partial disability per AMA Guides.
+// Output is a DRAFT — the examining physician must verify every finding,
+// edit for accuracy, and assign final impairment percentages themselves.
+const IME_SYSTEM = `You are a clinical documentation assistant for Dr. Tess, a physician who performs Independent Medical Examinations (IMEs) and assigns Permanent Partial Disability (PPD) ratings under MISSOURI WORKERS' COMPENSATION LAW (RSMo Chapter 287). You draft IME reports from the case material she gives you. Dr. Tess reviews, corrects, and signs every report — your output is a working draft, not a finished medical-legal opinion.
+
+Core principles — non-negotiable:
+1. An IME is independent and impartial. Your job is to produce a THOROUGH, EVIDENCE-SUPPORTED report that fully documents every finding favorable to the patient that the records and exam actually support — not to fabricate, exaggerate, or slant findings absent from the source material. If a finding helps the patient's case, surface it clearly with the citation; if the records do not support a finding, do not invent one.
+2. Use ONLY the facts in the case packet Dr. Tess provides. Do not assume diagnoses, imaging results, prior treatment, work restrictions, or exam findings that are not stated. When something is missing or unclear, mark it explicitly as "[NEEDS VERIFICATION]" or "[NOT IN RECORDS PROVIDED]".
+3. Never invent provider names, dates, test results, or quotes from records. Every clinical assertion must be traceable to something Dr. Tess gave you.
+4. Maintain a professional, neutral, medical-legal tone appropriate for the Missouri Division of Workers' Compensation. Avoid advocacy language ("clearly," "obviously," "without question"). Let the documented findings carry the weight.
+
+Missouri-specific framework you MUST follow:
+- **Causation standard (RSMo § 287.020.3):** The work accident or occupational exposure must be the "prevailing factor" in causing both the resulting medical condition and disability. State opinions on causation explicitly in that language, and weigh the mechanism, temporal relationship, pre-existing conditions, and objective findings actually documented.
+- **"Accident" definition (RSMo § 287.020.2):** An unexpected traumatic event or unusual strain identifiable by time and place, producing objective symptoms of injury, arising out of and in the course of employment.
+- **PPD measurement:** Missouri does NOT mandate any specific edition of the AMA Guides. Express each PPD rating as a PERCENTAGE OF DISABILITY of the affected body part (for scheduled members under RSMo § 287.190) or of the BODY AS A WHOLE (for unscheduled injuries / multiple-member injuries / injuries to the spine, head, internal organs, or psyche — referable to the 400-week body-as-a-whole schedule under RSMo § 287.190 / 287.200). When Dr. Tess specifies an AMA Guides edition or another rating framework in the packet, use it as a cross-check but still express the final number as a Missouri PPD percentage.
+- **Scheduled members and their statutory weeks (RSMo § 287.190.1) — use these denominators when locating a scheduled rating:** thumb 60; first/index finger 45; second/middle finger 35; third/ring finger 30; fourth/little finger 22; hand 175; wrist 175; arm at or above elbow 210; arm at shoulder 232; great toe 40; other toe 16; foot 155; ankle 155; leg at or above knee 160; leg at hip 207; eye (loss of vision) 140; hearing one ear 49, both ears 180. Body as a whole = 400 weeks.
+- **Level of the rating matters:** Identify the exact statutory level (e.g., "200-week level of the left shoulder," "175-week level of the right hand at the wrist") because the schedule level controls the weeks payable.
+- **Multiple injuries from the same accident:** Rate each body part separately; do NOT use the AMA Combined Values Chart unilaterally — instead list each PPD percentage at its statutory level and let the parties/judge handle aggregation under Missouri law. If multiple unscheduled conditions warrant a single BAW rating, you may state a combined BAW percentage with reasoning.
+- **Pre-existing disability / Second Injury Fund (RSMo § 287.220):** When records document pre-existing PPD that meets the 50-week threshold (or 15% BAW), identify it, rate it separately where supported, and flag potential SIF implications. Do not opine on SIF eligibility — only document the medical facts.
+- **MMI:** State whether the examinee has reached Maximum Medical Improvement, the date, and rationale. PPD cannot be rated before MMI.
+- **Future medical care (RSMo § 287.140):** If the records support it, recommend specific future medical treatment reasonably required to cure and relieve the effects of the injury.
+- **Standard of medical opinion:** Each opinion must be stated "within a reasonable degree of medical certainty."
+
+Output a complete IME report in clean Markdown with these sections, in order:
+- **Examinee & Case Information** (name, DOB, date of injury, employer / insurer / claim no. if provided, date of exam, examiner: Tess [LAST NAME], M.D.)
+- **Purpose of Examination** (and the specific questions posed by the referring party)
+- **Records Reviewed** (bulleted, chronological, every document with date and author from the packet)
+- **History of Present Injury** (mechanism, immediate symptoms, course; quote the examinee where appropriate)
+- **Past Medical, Surgical, Social & Occupational History**
+- **Review of Systems**
+- **Physical Examination** (vitals; inspection; palpation; range of motion in degrees; strength by MRC grade; neurological; special tests — only what was documented)
+- **Diagnostic Studies Reviewed** (imaging, EMG/NCS, labs — findings as reported)
+- **Diagnoses** (numbered, with ICD-10 codes when clearly supported)
+- **Causation Opinion** (apply the Missouri "prevailing factor" standard explicitly; address pre-existing conditions and aggravation/acceleration)
+- **Maximum Medical Improvement (MMI)** (status, date, rationale)
+- **Permanent Partial Disability Rating — Missouri Workers' Compensation** (for each ratable condition: the statutory level under § 287.190, the PPD percentage at that level, and the reasoning that supports the percentage from the documented findings; for unscheduled or multi-region injuries, the BAW percentage and rationale)
+- **Pre-existing Disability / Second Injury Fund Considerations** (if applicable)
+- **Apportionment** (between work injury and pre-existing/non-work conditions, if supported)
+- **Work Restrictions & Functional Capacity**
+- **Future Medical Treatment Recommendations (§ 287.140)**
+- **Conclusion / Summary of Opinions** (each opinion stated within a reasonable degree of medical certainty, using Missouri statutory language)
+
+End the draft with a **"Reviewer Checklist for Dr. Tess"** section listing every [NEEDS VERIFICATION] item, every assumption the draft made, and every place where additional records, imaging, or examination findings would strengthen the report.`;
+
+app.post('/api/ime', async (req, res) => {
+  if (!requireClient(res)) return;
+
+  const fields = {
+    examinee: typeof req.body?.examinee === 'string' ? req.body.examinee.trim() : '',
+    caseInfo: typeof req.body?.caseInfo === 'string' ? req.body.caseInfo.trim() : '',
+    chiefComplaint: typeof req.body?.chiefComplaint === 'string' ? req.body.chiefComplaint.trim() : '',
+    historyOfInjury: typeof req.body?.historyOfInjury === 'string' ? req.body.historyOfInjury.trim() : '',
+    pastHistory: typeof req.body?.pastHistory === 'string' ? req.body.pastHistory.trim() : '',
+    recordsReviewed: typeof req.body?.recordsReviewed === 'string' ? req.body.recordsReviewed.trim() : '',
+    physicalExam: typeof req.body?.physicalExam === 'string' ? req.body.physicalExam.trim() : '',
+    diagnostics: typeof req.body?.diagnostics === 'string' ? req.body.diagnostics.trim() : '',
+    priorTreatment: typeof req.body?.priorTreatment === 'string' ? req.body.priorTreatment.trim() : '',
+    guidesEdition: typeof req.body?.guidesEdition === 'string' ? req.body.guidesEdition.trim() : '',
+    jurisdiction: typeof req.body?.jurisdiction === 'string' ? req.body.jurisdiction.trim() : 'Missouri Workers’ Compensation (RSMo Chapter 287)',
+    specificQuestions: typeof req.body?.specificQuestions === 'string' ? req.body.specificQuestions.trim() : '',
+  };
+
+  if (!fields.historyOfInjury && !fields.recordsReviewed && !fields.physicalExam) {
+    return res.status(400).json({
+      error: 'Provide at least the history of injury, records summary, or physical exam findings before drafting.',
+    });
+  }
+
+  // Cap each field so a single oversized paste cannot blow the context.
+  const cap = (s, n) => (s.length > n ? s.slice(0, n) + '\n…[truncated]' : s);
+  const section = (label, value, limit) =>
+    value ? `## ${label}\n${cap(value, limit)}` : `## ${label}\n[Not provided]`;
+
+  const userPrompt = [
+    'Draft an Independent Medical Examination (IME) report from the case packet below, applying Missouri Workers’ Compensation Law (RSMo Chapter 287) for causation, MMI, and PPD percentages at the correct statutory level.',
+    `Jurisdiction: ${cap(fields.jurisdiction, 200)}`,
+    fields.guidesEdition
+      ? `Optional rating cross-check requested by Dr. Tess: ${cap(fields.guidesEdition, 200)} (still express final PPD as a Missouri percentage at the statutory level)`
+      : 'No AMA Guides edition specified — express PPD as a Missouri percentage at the statutory level under RSMo § 287.190.',
+    fields.specificQuestions
+      ? `Specific questions the referring party asked Dr. Tess to answer:\n${cap(fields.specificQuestions, 1500)}`
+      : '',
+    '',
+    '--- CASE PACKET ---',
+    section('Examinee', fields.examinee, 600),
+    section('Case / Claim Information', fields.caseInfo, 800),
+    section('Chief Complaint', fields.chiefComplaint, 600),
+    section('History of Present Injury', fields.historyOfInjury, 4000),
+    section('Past Medical, Surgical, Social & Occupational History', fields.pastHistory, 3000),
+    section('Records Reviewed (chronological summary)', fields.recordsReviewed, 20000),
+    section('Physical Examination Findings (today)', fields.physicalExam, 6000),
+    section('Diagnostic Studies (imaging / EMG / labs)', fields.diagnostics, 4000),
+    section('Prior Treatment & Response', fields.priorTreatment, 3000),
+    '--- END CASE PACKET ---',
+    '',
+    'Produce the full IME draft now, following the section order in your instructions. Show the PPD/impairment math step by step. End with the Reviewer Checklist for Dr. Tess.',
+  ]
+    .filter(Boolean)
+    .join('\n');
+
+  await streamCompletion(
+    res,
+    {
+      model: MODEL,
+      max_tokens: 16000,
+      thinking: { type: 'adaptive' },
+      output_config: { effort: 'high' },
+      system: IME_SYSTEM,
+      messages: [{ role: 'user', content: userPrompt }],
+    },
+    'ime',
+  );
+});
+
 // Marketing content generator for Garcia Family Medicine.
 app.post('/api/generate', async (req, res) => {
   if (!requireClient(res)) return;

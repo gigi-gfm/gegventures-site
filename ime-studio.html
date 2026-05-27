@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IME Studio for Dr. Tess | Missouri PPD Report Drafter</title>
+  <meta name="description" content="A clinical documentation tool that helps Dr. Tess draft thorough, evidence-supported Independent Medical Examination reports with PPD percentages under Missouri Workers' Compensation Law (RSMo Chapter 287)." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/ime.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="index.html"><span class="brand__mark">G</span> Gegventures</a>
+      <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <nav class="nav">
+        <a href="index.html">Home</a>
+        <a href="services.html">Services</a>
+        <a href="about.html">About</a>
+        <a href="studio.html">AI Studio</a>
+        <a href="ime-studio.html" class="is-active">IME Studio</a>
+        <a href="contact.html">Contact</a>
+        <a href="contact.html" class="btn btn--primary">Free Consultation</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="page-hero">
+      <div class="wrap">
+        <span class="eyebrow">IME Studio &mdash; for Dr. Tess</span>
+        <h1>Draft thorough, evidence-supported IME reports — faster.</h1>
+        <p class="lead">
+          Paste the case packet (records summary, history, physical exam, imaging).
+          The studio drafts a complete Independent Medical Examination report with
+          a Missouri-statute PPD percentage at the correct schedule level under
+          RSMo § 287.190, the &ldquo;prevailing factor&rdquo; causation analysis under § 287.020.3,
+          MMI status, work restrictions, and future-care recommendations. Every output is a draft for
+          Dr. Tess&rsquo;s review and signature.
+        </p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap">
+        <div class="ai-banner" id="aiBanner" hidden>
+          The AI backend isn&rsquo;t configured yet. Add an <code>ANTHROPIC_API_KEY</code>
+          to your <code>.env</code> file and restart the server to enable drafting.
+        </div>
+
+        <div class="ime-disclaimer">
+          <strong>Clinical-use disclaimer.</strong>
+          This tool produces a working draft from the material you paste. It does not access
+          outside records. It does not assign a final PPD percentage on its own &mdash;
+          Dr. Tess must verify every finding, confirm the statutory schedule level,
+          adjust percentages based on her examination, and sign the final report. The draft
+          can only be as accurate, complete, and impartial as the source material you provide.
+          An IME must remain independent: include all findings the records support,
+          not findings they do not.
+        </div>
+
+        <div class="studio ime-studio">
+          <form class="studio__form" id="imeForm">
+            <div class="ime-section-title">Examinee &amp; case</div>
+            <div class="field">
+              <label for="examinee">Examinee identifiers</label>
+              <textarea
+                id="examinee"
+                name="examinee"
+                rows="2"
+                placeholder="Name, DOB, sex, dominant hand, employer, occupation at time of injury"
+              ></textarea>
+            </div>
+            <div class="field">
+              <label for="caseInfo">Claim / case info</label>
+              <textarea
+                id="caseInfo"
+                name="caseInfo"
+                rows="2"
+                placeholder="Date of injury, claim number, insurer, attorney, date of exam, referring party"
+              ></textarea>
+            </div>
+            <div class="field-row">
+              <div class="field">
+                <label for="jurisdiction">Jurisdiction</label>
+                <input
+                  id="jurisdiction"
+                  name="jurisdiction"
+                  type="text"
+                  value="Missouri Workers’ Compensation (RSMo Chapter 287)"
+                />
+              </div>
+              <div class="field">
+                <label for="guidesEdition">AMA Guides cross-check <span class="field__hint">(optional)</span></label>
+                <input
+                  id="guidesEdition"
+                  name="guidesEdition"
+                  type="text"
+                  placeholder="e.g. AMA Guides 5th Edition — for cross-check only"
+                />
+              </div>
+            </div>
+            <div class="field">
+              <label for="specificQuestions">Specific questions to answer <span class="field__hint">(optional)</span></label>
+              <textarea
+                id="specificQuestions"
+                name="specificQuestions"
+                rows="3"
+                placeholder="Questions posed by the referring attorney or carrier — causation, MMI, PPD percentage, future care, work restrictions, SIF considerations…"
+              ></textarea>
+            </div>
+
+            <div class="ime-section-title">Clinical material</div>
+            <div class="field">
+              <label for="chiefComplaint">Chief complaint</label>
+              <textarea
+                id="chiefComplaint"
+                name="chiefComplaint"
+                rows="2"
+                placeholder="In the examinee's own words"
+              ></textarea>
+            </div>
+            <div class="field">
+              <label for="historyOfInjury">History of present injury <span class="field__hint">(mechanism, immediate symptoms, course)</span></label>
+              <textarea
+                id="historyOfInjury"
+                name="historyOfInjury"
+                rows="5"
+                placeholder="What happened, when, how. Initial symptoms, evolution, current symptoms, aggravating/relieving factors."
+              ></textarea>
+            </div>
+            <div class="field">
+              <label for="pastHistory">Past medical, surgical, social &amp; occupational history</label>
+              <textarea
+                id="pastHistory"
+                name="pastHistory"
+                rows="4"
+                placeholder="Prior injuries to the same body part, comorbidities, surgeries, smoking, alcohol, job duties, prior PPD ratings if any."
+              ></textarea>
+            </div>
+            <div class="field">
+              <label for="recordsReviewed">Records reviewed <span class="field__hint">(chronological summary &mdash; paste the records or a structured summary)</span></label>
+              <textarea
+                id="recordsReviewed"
+                name="recordsReviewed"
+                rows="10"
+                placeholder="ED note 03/14/2024 — Dr. Smith, urgent care…
+Orthopedic eval 04/02/2024 — Dr. Jones, impression…
+PT notes 04–06/2024…
+MRI report 05/10/2024 — radiologist findings…
+Operative note 06/22/2024…
+Follow-up notes…"
+              ></textarea>
+            </div>
+            <div class="field">
+              <label for="physicalExam">Physical examination findings (today)</label>
+              <textarea
+                id="physicalExam"
+                name="physicalExam"
+                rows="8"
+                placeholder="Vitals, inspection, palpation, ROM in degrees (active/passive), strength by MRC grade, neuro (sensory, reflexes, motor), special tests (e.g., Spurling, Hawkins, Lachman, McMurray), gait, atrophy measurements."
+              ></textarea>
+            </div>
+            <div class="field">
+              <label for="diagnostics">Diagnostic studies <span class="field__hint">(imaging, EMG/NCS, labs &mdash; as reported)</span></label>
+              <textarea
+                id="diagnostics"
+                name="diagnostics"
+                rows="4"
+                placeholder="MRI L-spine 05/10/2024 — L4-5 disc protrusion with nerve root contact…
+EMG/NCS RUE 06/01/2024 — moderate carpal tunnel right…"
+              ></textarea>
+            </div>
+            <div class="field">
+              <label for="priorTreatment">Prior treatment &amp; response</label>
+              <textarea
+                id="priorTreatment"
+                name="priorTreatment"
+                rows="3"
+                placeholder="Conservative care, injections, surgery, PT response, current medications, work status timeline."
+              ></textarea>
+            </div>
+
+            <button type="submit" class="btn btn--primary" id="imeRun">Draft IME report</button>
+            <p class="form-note" id="imeStatus" role="status"></p>
+          </form>
+
+          <div class="studio__result">
+            <div class="studio__result-head">
+              <h3>IME draft</h3>
+              <div class="ime-result-actions">
+                <button type="button" class="btn btn--ghost" id="imeDownload" hidden>Download .md</button>
+                <button type="button" class="btn btn--ghost" id="imeCopy" hidden>Copy</button>
+              </div>
+            </div>
+            <pre class="studio__output ime-output" id="imeOutput" hidden></pre>
+            <p class="studio__empty" id="imeEmpty">
+              The drafted IME report will appear here. It will include sections for records reviewed,
+              history, exam, diagnoses, Missouri &ldquo;prevailing factor&rdquo; causation, MMI, PPD
+              percentage(s) at the correct § 287.190 statutory level, work restrictions, future care,
+              and a reviewer checklist of every assumption the draft made.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section--warm">
+      <div class="wrap">
+        <div class="ime-ref">
+          <h2>Missouri PPD quick reference</h2>
+          <p>The drafter uses these statutory weeks (RSMo § 287.190.1) when locating a scheduled rating. Dr. Tess should confirm the level on every case.</p>
+          <div class="grid grid--3 ime-ref__grid">
+            <div>
+              <h4>Upper extremity</h4>
+              <ul>
+                <li>Thumb &mdash; 60 weeks</li>
+                <li>Index finger &mdash; 45</li>
+                <li>Middle finger &mdash; 35</li>
+                <li>Ring finger &mdash; 30</li>
+                <li>Little finger &mdash; 22</li>
+                <li>Hand / wrist &mdash; 175</li>
+                <li>Arm at/above elbow &mdash; 210</li>
+                <li>Arm at shoulder &mdash; 232</li>
+              </ul>
+            </div>
+            <div>
+              <h4>Lower extremity</h4>
+              <ul>
+                <li>Great toe &mdash; 40 weeks</li>
+                <li>Other toe &mdash; 16</li>
+                <li>Foot / ankle &mdash; 155</li>
+                <li>Leg at/above knee &mdash; 160</li>
+                <li>Leg at hip &mdash; 207</li>
+              </ul>
+            </div>
+            <div>
+              <h4>Other</h4>
+              <ul>
+                <li>Eye (vision loss) &mdash; 140 weeks</li>
+                <li>Hearing, one ear &mdash; 49</li>
+                <li>Hearing, both ears &mdash; 180</li>
+                <li>Body as a whole &mdash; 400</li>
+              </ul>
+              <p class="ime-ref__note">Spine, head, internal organs, psychiatric and multi-region injuries are rated as a percentage of body as a whole.</p>
+            </div>
+          </div>
+          <p class="ime-ref__cite">
+            Statutory references: causation &ldquo;prevailing factor&rdquo; standard &mdash; RSMo § 287.020.3;
+            schedule of losses &mdash; § 287.190; permanent partial disability &mdash; § 287.190 / § 287.200;
+            future medical &mdash; § 287.140; Second Injury Fund thresholds &mdash; § 287.220.
+            Always verify against the current statute and case law before signing.
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="footer-grid">
+        <div>
+          <a class="brand" href="index.html"><span class="brand__mark">G</span> Gegventures</a>
+          <p class="footer-about">
+            HIPAA-compliant digital tools for healthcare. Clinical documentation
+            support, marketing, and AI assistants &mdash; built for private practice.
+          </p>
+        </div>
+        <div>
+          <h4>Company</h4>
+          <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="about.html">About</a></li>
+            <li><a href="services.html">Services</a></li>
+            <li><a href="contact.html">Contact</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>AI tools</h4>
+          <ul>
+            <li><a href="garcia-family-medicine.html">Patient assistant</a></li>
+            <li><a href="studio.html">Content studio</a></li>
+            <li><a href="ime-studio.html">IME studio</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Serving</h4>
+          <ul>
+            <li>Missouri &mdash; statewide</li>
+            <li>Kansas City</li>
+            <li>St. Louis</li>
+            <li>Springfield</li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>&copy; <span data-year>2026</span> Gegventures. All rights reserved.</span>
+        <span>HIPAA-compliant &middot; Drafts only &mdash; physician verifies and signs every report</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/ime.js"></script>
+</body>
+</html>
