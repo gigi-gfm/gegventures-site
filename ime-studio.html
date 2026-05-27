@@ -64,6 +64,43 @@
           not findings they do not.
         </div>
 
+        <div class="ime-upload" id="imeUpload">
+          <div class="ime-upload__head">
+            <div>
+              <div class="ime-upload__title">Scan or upload medical records</div>
+              <div class="ime-upload__sub">
+                Drop PDFs or scanned images (PNG / JPG) here. The studio reads every page and
+                fills the form fields below &mdash; you review and edit before drafting.
+                Up to 8 files, 32 MB each.
+              </div>
+            </div>
+          </div>
+          <label class="ime-drop" id="imeDrop">
+            <input
+              type="file"
+              id="imeFiles"
+              accept="application/pdf,image/png,image/jpeg,image/gif,image/webp"
+              multiple
+              hidden
+            />
+            <div class="ime-drop__inner">
+              <div class="ime-drop__icon" aria-hidden="true">&#x2191;</div>
+              <div class="ime-drop__primary">
+                Drag &amp; drop records here, or <span class="ime-drop__pick">browse files</span>
+              </div>
+              <div class="ime-drop__hint">PDF, PNG, JPG, GIF, WebP</div>
+            </div>
+          </label>
+          <ul class="ime-file-list" id="imeFileList" hidden></ul>
+          <div class="ime-upload__actions">
+            <button type="button" class="btn btn--primary" id="imeExtractBtn" disabled>
+              Extract &amp; autofill form
+            </button>
+            <button type="button" class="btn btn--ghost" id="imeClearFiles" hidden>Clear files</button>
+            <p class="form-note" id="imeExtractStatus" role="status"></p>
+          </div>
+        </div>
+
         <div class="studio ime-studio">
           <form class="studio__form" id="imeForm">
             <div class="ime-section-title">Examinee &amp; case</div>

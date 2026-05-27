@@ -90,6 +90,108 @@
   gap: 8px;
 }
 
+/* Upload card */
+.ime-upload {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  margin-bottom: 28px;
+}
+.ime-upload__head { margin-bottom: 14px; }
+.ime-upload__title {
+  font-weight: 800;
+  font-size: 1.05rem;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.ime-upload__sub {
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+.ime-drop {
+  display: block;
+  border: 2px dashed var(--line);
+  border-radius: 12px;
+  background: var(--bg-warm);
+  padding: 28px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.ime-drop:hover,
+.ime-drop.is-drag {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.ime-drop__inner { pointer-events: none; }
+.ime-drop__icon {
+  font-size: 1.6rem;
+  color: var(--accent);
+  margin-bottom: 6px;
+  font-weight: 800;
+}
+.ime-drop__primary {
+  font-weight: 700;
+  color: var(--ink);
+  font-size: 0.98rem;
+}
+.ime-drop__pick { color: var(--accent-dark); text-decoration: underline; }
+.ime-drop__hint {
+  margin-top: 4px;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+}
+.ime-file-list {
+  list-style: none;
+  padding: 0;
+  margin: 14px 0 0;
+  display: grid;
+  gap: 6px;
+}
+.ime-file-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--bg-warm);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 0.88rem;
+}
+.ime-file-list .ime-file__name {
+  font-weight: 600;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ime-file-list .ime-file__size {
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+.ime-file-list .ime-file__remove {
+  background: none;
+  border: none;
+  color: var(--accent-dark);
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 2px 6px;
+}
+.ime-file-list .ime-file__remove:hover { text-decoration: underline; }
+.ime-upload__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+.ime-upload__actions .form-note { margin: 0; flex-basis: 100%; }
+
 .ime-ref { max-width: 980px; margin: 0 auto; }
 .ime-ref h2 { margin-bottom: 8px; }
 .ime-ref > p { margin-bottom: 24px; }

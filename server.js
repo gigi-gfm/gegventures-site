@@ -9,7 +9,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const MODEL = 'claude-opus-4-7';
 
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({ limit: '40mb' }));
 
 // Keep server internals out of the public static handler.
 const BLOCKED = [/^\/node_modules\//, /^\/server\.js$/, /^\/package(-lock)?\.json$/, /^\/\./];
@@ -252,6 +252,185 @@ app.post('/api/ime', async (req, res) => {
     },
     'ime',
   );
+});
+
+// IME case-packet extractor. Accepts uploaded medical records (PDFs and/or
+// images of scanned records), uses Claude's PDF + vision support to read them,
+// and returns a structured JSON object populating each form field in the IME
+// studio. The user reviews and edits before drafting the report.
+const EXTRACT_SYSTEM = `You are a medical records extraction assistant for Dr. Tess, who performs Independent Medical Examinations under Missouri Workers' Compensation Law. You are given one or more medical record documents (PDFs, scans, images) for a single examinee. Your job is to read every document carefully and populate the IME case packet by calling the populate_case_packet tool exactly once.
+
+Rules:
+- Read every page of every document. Quote dates, providers, diagnoses, imaging findings, exam findings, and treatment exactly as written.
+- Put each piece of information in the MOST APPROPRIATE field. If unsure, prefer 'recordsReviewed' (the chronological summary).
+- Do NOT invent facts, dates, providers, or findings that are not in the documents. If a field has no relevant content in the records, leave it as an empty string — do not guess.
+- For 'recordsReviewed', produce a CHRONOLOGICAL summary, one document per line or short paragraph, in the format: "MM/DD/YYYY — [document type] — [provider/facility] — [1–3 sentence summary of key findings, diagnoses, plan]". Include every encounter, imaging report, operative note, and PT/OT note you can identify.
+- For 'physicalExam', extract physical exam findings — ROM in degrees, MRC strength grades, special tests, neurological findings — only what is documented. This is for findings recorded in the source records, not a new exam.
+- For 'diagnostics', extract imaging (MRI, X-ray, CT, US), EMG/NCS, and lab reports as they were written by the reporting clinician.
+- For 'priorTreatment', list conservative care, injections, surgeries, PT/OT response, medications, and work-status timeline.
+- Preserve every concrete number, date, dose, and provider name. These are medical-legal documents — accuracy is non-negotiable.
+- If pages are unreadable, blurry, or in an unexpected language, note that in the relevant field as "[Page(s) X unreadable]" but still extract everything legible.`;
+
+const EXTRACT_TOOL = {
+  name: 'populate_case_packet',
+  description:
+    'Populate the IME case packet form for Dr. Tess from the uploaded medical records.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      examinee: {
+        type: 'string',
+        description:
+          'Examinee identifiers extracted from the records: full name, DOB, sex, dominant hand if mentioned, employer, occupation at time of injury. One short paragraph.',
+      },
+      caseInfo: {
+        type: 'string',
+        description:
+          'Claim / case information: date of injury, claim number, insurer/carrier, employer, attorney, referring party, date(s) of examination if present.',
+      },
+      chiefComplaint: {
+        type: 'string',
+        description:
+          "The examinee's chief complaint as documented, in the examinee's own words where quoted.",
+      },
+      historyOfInjury: {
+        type: 'string',
+        description:
+          'History of present injury: mechanism of injury, immediate symptoms, evolution of symptoms, current symptoms, aggravating and relieving factors. Compose from the records.',
+      },
+      pastHistory: {
+        type: 'string',
+        description:
+          'Past medical, surgical, social, family, and occupational history including prior injuries to the same body part, comorbidities, prior surgeries, smoking/alcohol, job duties, and any prior PPD ratings.',
+      },
+      recordsReviewed: {
+        type: 'string',
+        description:
+          'A CHRONOLOGICAL summary of every document, encounter, and report extracted from the uploaded records. Format each line: "MM/DD/YYYY — [type] — [provider] — [key findings]". Include ED visits, urgent care, orthopedic/specialist evals, PT/OT notes, imaging reports, operative notes, follow-ups, and IMEs.',
+      },
+      physicalExam: {
+        type: 'string',
+        description:
+          'Physical exam findings as documented in the records (vitals, inspection, palpation, ROM in degrees, MRC strength grades, neurological findings, special tests). Only what is documented.',
+      },
+      diagnostics: {
+        type: 'string',
+        description:
+          'Diagnostic studies as reported by the reading clinician: MRI, X-ray, CT, ultrasound, EMG/NCS, labs — with date and finding.',
+      },
+      priorTreatment: {
+        type: 'string',
+        description:
+          'Prior treatment and response: conservative care, injections, surgical procedures with dates, PT/OT response, current medications, and the work-status timeline (off work, light duty, full duty, restrictions).',
+      },
+      notes: {
+        type: 'string',
+        description:
+          'Any extraction notes for Dr. Tess: missing pages, unreadable sections, conflicting documentation between providers, or anything that warrants verification before drafting.',
+      },
+    },
+    required: [
+      'examinee',
+      'caseInfo',
+      'chiefComplaint',
+      'historyOfInjury',
+      'pastHistory',
+      'recordsReviewed',
+      'physicalExam',
+      'diagnostics',
+      'priorTreatment',
+      'notes',
+    ],
+  },
+};
+
+const ALLOWED_MEDIA = {
+  'application/pdf': 'document',
+  'image/jpeg': 'image',
+  'image/png': 'image',
+  'image/gif': 'image',
+  'image/webp': 'image',
+};
+
+const MAX_FILES = 8;
+const MAX_FILE_BYTES = 32 * 1024 * 1024; // Anthropic per-document cap
+const MAX_TOTAL_BYTES = 80 * 1024 * 1024;
+
+app.post('/api/extract', async (req, res) => {
+  if (!requireClient(res)) return;
+
+  const files = Array.isArray(req.body?.files) ? req.body.files : [];
+  if (files.length === 0) {
+    return res.status(400).json({ error: 'Upload at least one medical record file.' });
+  }
+  if (files.length > MAX_FILES) {
+    return res
+      .status(400)
+      .json({ error: `Upload at most ${MAX_FILES} files at a time.` });
+  }
+
+  let totalBytes = 0;
+  const content = [];
+  for (const file of files) {
+    if (!file || typeof file.data !== 'string' || typeof file.mediaType !== 'string') {
+      return res.status(400).json({ error: 'Each file must include mediaType and base64 data.' });
+    }
+    const kind = ALLOWED_MEDIA[file.mediaType];
+    if (!kind) {
+      return res.status(400).json({
+        error: `Unsupported file type "${file.mediaType}". Use PDF, JPEG, PNG, GIF, or WebP.`,
+      });
+    }
+    // base64 length * 3/4 ≈ byte size
+    const approxBytes = Math.floor((file.data.length * 3) / 4);
+    if (approxBytes > MAX_FILE_BYTES) {
+      return res.status(400).json({
+        error: `${file.name || 'A file'} is larger than 32 MB — split it or compress before uploading.`,
+      });
+    }
+    totalBytes += approxBytes;
+    if (totalBytes > MAX_TOTAL_BYTES) {
+      return res
+        .status(400)
+        .json({ error: 'Combined upload exceeds 80 MB — upload fewer or smaller files.' });
+    }
+    content.push({
+      type: kind,
+      source: { type: 'base64', media_type: file.mediaType, data: file.data },
+    });
+  }
+
+  content.push({
+    type: 'text',
+    text: 'Read every document above carefully, then call the populate_case_packet tool exactly once with the extracted fields. Be exhaustive in recordsReviewed.',
+  });
+
+  try {
+    const response = await client.messages.create({
+      model: MODEL,
+      max_tokens: 16000,
+      system: EXTRACT_SYSTEM,
+      tools: [EXTRACT_TOOL],
+      tool_choice: { type: 'tool', name: 'populate_case_packet' },
+      messages: [{ role: 'user', content }],
+    });
+
+    const toolUse = (response.content || []).find((b) => b.type === 'tool_use');
+    if (!toolUse || !toolUse.input || typeof toolUse.input !== 'object') {
+      return res.status(502).json({
+        error: 'The model did not return structured fields. Try again, or upload fewer pages.',
+      });
+    }
+
+    return res.json({ fields: toolUse.input });
+  } catch (err) {
+    console.error('extract error:', err?.message || err);
+    return res.status(500).json({
+      error:
+        err?.message ||
+        'Extraction failed. Confirm the files are readable PDFs or clear scans and try again.',
+    });
+  }
 });
 
 // Marketing content generator for Garcia Family Medicine.
