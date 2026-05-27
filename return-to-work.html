@@ -179,6 +179,20 @@ No operation of heavy machinery"
   <script src="js/ai.js"></script>
   <script src="js/letter-tools.js"></script>
   <script>
+    // Hand-off from IME Studio: pre-fill patient / employer / reason if present.
+    (function () {
+      try {
+        var raw = localStorage.getItem('rtw_handoff');
+        if (!raw) return;
+        var data = JSON.parse(raw);
+        localStorage.removeItem('rtw_handoff');
+        ['patient', 'employer', 'reasonForLetter'].forEach(function (k) {
+          var el = document.getElementById(k);
+          if (el && data[k]) el.value = data[k];
+        });
+      } catch (e) { /* ignore */ }
+    })();
+
     LetterTools.init({
       formId: 'rtwForm',
       outputId: 'output',

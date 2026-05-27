@@ -200,6 +200,14 @@
 }
 .ime-upload__actions .form-note { margin: 0; flex-basis: 100%; }
 
+.ime-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-top: 10px;
+}
+
 .ime-ref { max-width: 980px; margin: 0 auto; }
 .ime-ref h2 { margin-bottom: 8px; }
 .ime-ref > p { margin-bottom: 24px; }

@@ -182,6 +182,20 @@ Springfield, MO 65801"
   <script src="js/ai.js"></script>
   <script src="js/letter-tools.js"></script>
   <script>
+    // Hand-off from IME Studio: pre-fill the clinical context if present.
+    (function () {
+      try {
+        var raw = localStorage.getItem('referral_handoff');
+        if (!raw) return;
+        var data = JSON.parse(raw);
+        localStorage.removeItem('referral_handoff');
+        ['patient', 'reason', 'clinicalHistory', 'examLabsImaging', 'medications'].forEach(function (k) {
+          var el = document.getElementById(k);
+          if (el && data[k]) el.value = data[k];
+        });
+      } catch (e) { /* ignore */ }
+    })();
+
     LetterTools.init({
       formId: 'referralForm',
       outputId: 'output',

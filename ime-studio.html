@@ -303,7 +303,15 @@ EMG/NCS RUE 06/01/2024 — moderate carpal tunnel right…"
               ></textarea>
             </div>
 
-            <button type="submit" class="btn btn--primary" id="imeRun">Draft IME report</button>
+            <div class="ime-action-row">
+              <button type="submit" class="btn btn--primary" id="imeRun">Draft IME report</button>
+              <button type="button" class="btn btn--ghost" id="rtwHandoffBtn">
+                Draft RTW letter &rarr;
+              </button>
+              <button type="button" class="btn btn--ghost" id="referralHandoffBtn">
+                Draft referral &rarr;
+              </button>
+            </div>
             <p class="form-note" id="imeStatus" role="status"></p>
           </form>
 

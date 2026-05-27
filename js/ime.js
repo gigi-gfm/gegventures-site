@@ -348,6 +348,67 @@
     if (!s.aiConfigured && banner) banner.hidden = false;
   });
 
+  // Hand the patient/case context over to the RTW page, opened in a new tab.
+  var rtwBtn = document.getElementById('rtwHandoffBtn');
+  if (rtwBtn) {
+    rtwBtn.addEventListener('click', function () {
+      var examinee = readField('examinee');
+      var caseInfo = readField('caseInfo');
+      var chief = readField('chiefComplaint');
+      var history = readField('historyOfInjury');
+
+      // Brief medical context for the RTW letter — kept short, HR-appropriate.
+      var brief = '';
+      if (chief) brief = chief;
+      if (history) brief = brief ? brief + '\n\n' + history : history;
+      if (brief.length > 600) brief = brief.slice(0, 600) + '…';
+
+      var payload = {
+        patient: examinee,
+        employer: caseInfo,
+        reasonForLetter: brief,
+      };
+      try {
+        localStorage.setItem('rtw_handoff', JSON.stringify(payload));
+      } catch (e) {
+        /* ignore — RTW page will just open blank */
+      }
+      window.open('return-to-work.html', '_blank');
+    });
+  }
+
+  // Hand the patient/case context over to the Referral page, opened in a new tab.
+  var refBtn = document.getElementById('referralHandoffBtn');
+  if (refBtn) {
+    refBtn.addEventListener('click', function () {
+      var examinee = readField('examinee');
+      var chief = readField('chiefComplaint');
+      var history = readField('historyOfInjury');
+      var past = readField('pastHistory');
+      var dx = readField('diagnostics');
+      var priorTx = readField('priorTreatment');
+      var todayExam = readField('physicalExam');
+      var priorExam = readField('priorExamFindings');
+
+      var clinicalHistory = [chief, history, past].filter(Boolean).join('\n\n');
+      var examLabsImaging = [todayExam, priorExam, dx].filter(Boolean).join('\n\n');
+
+      var payload = {
+        patient: examinee,
+        reason: chief || history.slice(0, 300),
+        clinicalHistory: clinicalHistory,
+        examLabsImaging: examLabsImaging,
+        medications: priorTx,
+      };
+      try {
+        localStorage.setItem('referral_handoff', JSON.stringify(payload));
+      } catch (e) {
+        /* ignore */
+      }
+      window.open('referral.html', '_blank');
+    });
+  }
+
   // Default letter date to today, in "Month D, YYYY" format Dr. Garcia uses.
   var letterDateInput = document.getElementById('letterDate');
   if (letterDateInput && !letterDateInput.value) {
