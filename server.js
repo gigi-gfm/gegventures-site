@@ -9,7 +9,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const MODEL = 'claude-opus-4-7';
 
-app.use(express.json({ limit: '40mb' }));
+app.use(express.json({ limit: '400mb' }));
 
 // Keep server internals out of the public static handler.
 const BLOCKED = [/^\/node_modules\//, /^\/server\.js$/, /^\/package(-lock)?\.json$/, /^\/\./];
@@ -352,9 +352,12 @@ const ALLOWED_MEDIA = {
   'image/webp': 'image',
 };
 
-const MAX_FILES = 8;
-const MAX_FILE_BYTES = 32 * 1024 * 1024; // Anthropic per-document cap
-const MAX_TOTAL_BYTES = 80 * 1024 * 1024;
+// Anthropic enforces a 32 MB / 100-page cap PER PDF on the API side; that is
+// not something the app can override. We do not impose any limit on how many
+// PDFs Dr. Tess can upload — large packets are split into batches and
+// extracted in parallel, then merged.
+const ANTHROPIC_PER_FILE_BYTES = 32 * 1024 * 1024;
+const EXTRACT_BATCH_FILES = 5; // files per Claude call when batching
 
 app.post('/api/extract', async (req, res) => {
   if (!requireClient(res)) return;
@@ -363,14 +366,8 @@ app.post('/api/extract', async (req, res) => {
   if (files.length === 0) {
     return res.status(400).json({ error: 'Upload at least one medical record file.' });
   }
-  if (files.length > MAX_FILES) {
-    return res
-      .status(400)
-      .json({ error: `Upload at most ${MAX_FILES} files at a time.` });
-  }
 
-  let totalBytes = 0;
-  const content = [];
+  const prepared = [];
   for (const file of files) {
     if (!file || typeof file.data !== 'string' || typeof file.mediaType !== 'string') {
       return res.status(400).json({ error: 'Each file must include mediaType and base64 data.' });
@@ -381,31 +378,38 @@ app.post('/api/extract', async (req, res) => {
         error: `Unsupported file type "${file.mediaType}". Use PDF, JPEG, PNG, GIF, or WebP.`,
       });
     }
-    // base64 length * 3/4 ≈ byte size
     const approxBytes = Math.floor((file.data.length * 3) / 4);
-    if (approxBytes > MAX_FILE_BYTES) {
+    if (approxBytes > ANTHROPIC_PER_FILE_BYTES) {
       return res.status(400).json({
-        error: `${file.name || 'A file'} is larger than 32 MB — split it or compress before uploading.`,
+        error:
+          `${file.name || 'A file'} is ${(approxBytes / 1024 / 1024).toFixed(1)} MB — the Anthropic API limits a single PDF to 32 MB / 100 pages. ` +
+          'Split that file into smaller PDFs (e.g. one PDF per provider) and re-upload — there is no limit on how many PDFs you can upload.',
       });
     }
-    totalBytes += approxBytes;
-    if (totalBytes > MAX_TOTAL_BYTES) {
-      return res
-        .status(400)
-        .json({ error: 'Combined upload exceeds 80 MB — upload fewer or smaller files.' });
-    }
-    content.push({
-      type: kind,
-      source: { type: 'base64', media_type: file.mediaType, data: file.data },
+    prepared.push({
+      name: file.name || 'document',
+      block: {
+        type: kind,
+        source: { type: 'base64', media_type: file.mediaType, data: file.data },
+      },
     });
   }
 
-  content.push({
-    type: 'text',
-    text: 'Read every document above carefully, then call the populate_case_packet tool exactly once with the extracted fields. Be exhaustive in recordsReviewed.',
-  });
+  // Split into batches so a packet of 50+ PDFs doesn't blow a single request.
+  const batches = [];
+  for (let i = 0; i < prepared.length; i += EXTRACT_BATCH_FILES) {
+    batches.push(prepared.slice(i, i + EXTRACT_BATCH_FILES));
+  }
 
-  try {
+  async function extractBatch(batch, batchIdx) {
+    const content = batch.map((b) => b.block);
+    content.push({
+      type: 'text',
+      text:
+        batches.length > 1
+          ? `This is batch ${batchIdx + 1} of ${batches.length} from a larger medical-records packet for the same examinee. Read every document above carefully and call populate_case_packet exactly once with everything extractable from THIS batch. A later merge step will combine batches — so be exhaustive in recordsReviewed (every document, in chronological order, with dates and providers).`
+          : 'Read every document above carefully, then call populate_case_packet exactly once with the extracted fields. Be exhaustive in recordsReviewed.',
+    });
     const response = await client.messages.create({
       model: MODEL,
       max_tokens: 16000,
@@ -414,15 +418,80 @@ app.post('/api/extract', async (req, res) => {
       tool_choice: { type: 'tool', name: 'populate_case_packet' },
       messages: [{ role: 'user', content }],
     });
-
     const toolUse = (response.content || []).find((b) => b.type === 'tool_use');
     if (!toolUse || !toolUse.input || typeof toolUse.input !== 'object') {
-      return res.status(502).json({
-        error: 'The model did not return structured fields. Try again, or upload fewer pages.',
-      });
+      throw new Error(
+        'The model did not return structured fields for batch ' +
+          (batchIdx + 1) +
+          '. Try again, or split the upload differently.'
+      );
     }
+    return toolUse.input;
+  }
 
-    return res.json({ fields: toolUse.input });
+  function mergeFields(parts) {
+    const fields = {
+      examinee: '',
+      caseInfo: '',
+      chiefComplaint: '',
+      historyOfInjury: '',
+      pastHistory: '',
+      recordsReviewed: '',
+      physicalExam: '',
+      diagnostics: '',
+      priorTreatment: '',
+      notes: '',
+    };
+    const join = (key, sep) => {
+      const values = parts
+        .map((p) => (typeof p[key] === 'string' ? p[key].trim() : ''))
+        .filter(Boolean);
+      // Dedup identical strings across batches
+      const seen = new Set();
+      const unique = values.filter((v) => (seen.has(v) ? false : (seen.add(v), true)));
+      fields[key] = unique.join(sep);
+    };
+    // Identifier/header fields: prefer the most complete first non-empty
+    ['examinee', 'caseInfo', 'chiefComplaint'].forEach((k) => {
+      const v = parts
+        .map((p) => (typeof p[k] === 'string' ? p[k].trim() : ''))
+        .filter(Boolean)
+        .sort((a, b) => b.length - a.length)[0];
+      fields[k] = v || '';
+    });
+    // Narrative fields: concatenate with paragraph breaks
+    ['historyOfInjury', 'pastHistory', 'physicalExam', 'diagnostics', 'priorTreatment', 'notes'].forEach(
+      (k) => join(k, '\n\n')
+    );
+    // Records reviewed: line-merge then chronological sort if dates present
+    const records = [];
+    const seen = new Set();
+    for (const p of parts) {
+      const text = typeof p.recordsReviewed === 'string' ? p.recordsReviewed : '';
+      for (const line of text.split('\n')) {
+        const t = line.trim();
+        if (!t) continue;
+        if (seen.has(t)) continue;
+        seen.add(t);
+        records.push(t);
+      }
+    }
+    records.sort((a, b) => {
+      const da = (a.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/) || [])[0];
+      const db = (b.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/) || [])[0];
+      if (!da && !db) return 0;
+      if (!da) return 1;
+      if (!db) return -1;
+      return new Date(da) - new Date(db);
+    });
+    fields.recordsReviewed = records.join('\n');
+    return fields;
+  }
+
+  try {
+    const results = await Promise.all(batches.map((b, i) => extractBatch(b, i)));
+    const merged = results.length === 1 ? results[0] : mergeFields(results);
+    return res.json({ fields: merged, batches: results.length, files: prepared.length });
   } catch (err) {
     console.error('extract error:', err?.message || err);
     return res.status(500).json({

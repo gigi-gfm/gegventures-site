@@ -29,7 +29,8 @@
     'image/gif': true,
     'image/webp': true,
   };
-  var MAX_FILES = 8;
+  // No artificial file-count limit. Anthropic enforces a 32 MB / 100-page
+  // cap per PDF; the server batches files internally if there are many.
   var MAX_BYTES = 32 * 1024 * 1024;
 
   function formatSize(bytes) {
@@ -77,10 +78,6 @@
     var added = 0;
     var rejected = [];
     Array.prototype.forEach.call(fileList, function (file) {
-      if (pendingFiles.length >= MAX_FILES) {
-        rejected.push(file.name + ' (limit ' + MAX_FILES + ' files)');
-        return;
-      }
       var type = file.type;
       if (type === 'image/jpg') type = 'image/jpeg';
       if (!ACCEPTED_MIME[type]) {
@@ -88,7 +85,7 @@
         return;
       }
       if (file.size > MAX_BYTES) {
-        rejected.push(file.name + ' (over 32 MB)');
+        rejected.push(file.name + ' (over 32 MB — split PDF into smaller files)');
         return;
       }
       pendingFiles.push(file);
