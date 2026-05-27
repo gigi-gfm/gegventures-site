@@ -67,6 +67,14 @@
   line-height: 1.55;
 }
 
+.field--today-exam {
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  padding: 14px 14px 6px;
+}
+.field--today-exam > label { color: var(--accent-dark); }
+
 .field-row {
   display: grid;
   grid-template-columns: 1fr 1fr;

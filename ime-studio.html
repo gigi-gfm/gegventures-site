@@ -197,12 +197,28 @@ Follow-up notes…"
               ></textarea>
             </div>
             <div class="field">
-              <label for="physicalExam">Physical examination findings (today)</label>
+              <label for="priorExamFindings">
+                Prior exam findings <span class="field__hint">(from records &mdash; auto-filled by upload; reference only)</span>
+              </label>
+              <textarea
+                id="priorExamFindings"
+                name="priorExamFindings"
+                rows="6"
+                placeholder="Auto-filled from uploaded records: e.g.
+08/22/2024 — Dr. Hayes, ortho — antalgic gait; lumbar flexion 30°, extension 10°; SLR positive R at 40°; EHL R 4/5; decreased L5 sensation right.
+07/15/2025 — Dr. Hayes, final visit — lumbar flexion 70°, extension 20°; SLR negative; EHL R 4+/5; residual L5 sensory deficit."
+              ></textarea>
+            </div>
+            <div class="field field--today-exam">
+              <label for="physicalExam">
+                Physical examination &mdash; TODAY at the IME visit
+                <span class="field__hint">(your own exam &mdash; this goes into the IME report)</span>
+              </label>
               <textarea
                 id="physicalExam"
                 name="physicalExam"
                 rows="8"
-                placeholder="Vitals, inspection, palpation, ROM in degrees (active/passive), strength by MRC grade, neuro (sensory, reflexes, motor), special tests (e.g., Spurling, Hawkins, Lachman, McMurray), gait, atrophy measurements."
+                placeholder="Your findings at today's IME visit only. Vitals, inspection, palpation, ROM in degrees (active/passive), strength by MRC grade, neuro (sensory, reflexes, motor), special tests (Spurling, Hawkins, Lachman, McMurray, SLR, etc.), gait, atrophy measurements. Do not paste prior providers' exams here — those go in the field above."
               ></textarea>
             </div>
             <div class="field">

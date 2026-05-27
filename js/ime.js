@@ -198,11 +198,13 @@
         setField('historyOfInjury', fields.historyOfInjury);
         setField('pastHistory', fields.pastHistory);
         setField('recordsReviewed', fields.recordsReviewed);
-        setField('physicalExam', fields.physicalExam);
+        setField('priorExamFindings', fields.priorExamFindings);
+        // NOTE: physicalExam (today's IME exam by Dr. Tess) is never auto-filled.
         setField('diagnostics', fields.diagnostics);
         setField('priorTreatment', fields.priorTreatment);
 
-        var note = 'Form filled from your records. Review every field before drafting.';
+        var note =
+          'Form filled from your records. Review every field, then enter YOUR exam findings from today’s IME visit in the highlighted "Physical Examination — TODAY" field before drafting.';
         if (fields.notes && fields.notes.trim()) {
           note += ' Extraction notes: ' + fields.notes.trim();
         }
@@ -250,15 +252,21 @@
       historyOfInjury: readField('historyOfInjury'),
       pastHistory: readField('pastHistory'),
       recordsReviewed: readField('recordsReviewed'),
+      priorExamFindings: readField('priorExamFindings'),
       physicalExam: readField('physicalExam'),
       diagnostics: readField('diagnostics'),
       priorTreatment: readField('priorTreatment'),
     };
 
-    if (!body.historyOfInjury && !body.recordsReviewed && !body.physicalExam) {
+    if (
+      !body.historyOfInjury &&
+      !body.recordsReviewed &&
+      !body.physicalExam &&
+      !body.priorExamFindings
+    ) {
       if (status)
         status.textContent =
-          'Add at least the history of injury, records summary, or physical exam findings before drafting.';
+          "Add at least the history of injury, records summary, or a physical exam (today's or from records) before drafting.";
       return;
     }
 

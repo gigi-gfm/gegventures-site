@@ -170,7 +170,8 @@ Output a complete IME report in clean Markdown with these sections, in order:
 - **History of Present Injury** (mechanism, immediate symptoms, course; quote the examinee where appropriate)
 - **Past Medical, Surgical, Social & Occupational History**
 - **Review of Systems**
-- **Physical Examination** (vitals; inspection; palpation; range of motion in degrees; strength by MRC grade; neurological; special tests — only what was documented)
+- **Physical Examination — Today at the IME Visit** (use ONLY the "Physical Examination — TODAY" section from the case packet — these are Dr. Tess's own findings from this examination: vitals; inspection; palpation; range of motion in degrees; strength by MRC grade; neurological; special tests. If the case packet's "Physical Examination — TODAY" section is empty, write "[NEEDS VERIFICATION — Dr. Tess to document IME-day examination]" and do NOT substitute findings from prior providers' exams into this section.)
+- **Interval Comparison of Examination Findings** (a brief comparison of TODAY's findings against the "Prior Physical Exam Findings" section from the records — what has improved, what is unchanged, what is new since the injury. Cite the prior exam date and provider when comparing. Skip this section if prior exam findings were not provided.)
 - **Diagnostic Studies Reviewed** (imaging, EMG/NCS, labs — findings as reported)
 - **Diagnoses** (numbered, with ICD-10 codes when clearly supported)
 - **Causation Opinion** (apply the Missouri "prevailing factor" standard explicitly; address pre-existing conditions and aggravation/acceleration)
@@ -194,6 +195,7 @@ app.post('/api/ime', async (req, res) => {
     historyOfInjury: typeof req.body?.historyOfInjury === 'string' ? req.body.historyOfInjury.trim() : '',
     pastHistory: typeof req.body?.pastHistory === 'string' ? req.body.pastHistory.trim() : '',
     recordsReviewed: typeof req.body?.recordsReviewed === 'string' ? req.body.recordsReviewed.trim() : '',
+    priorExamFindings: typeof req.body?.priorExamFindings === 'string' ? req.body.priorExamFindings.trim() : '',
     physicalExam: typeof req.body?.physicalExam === 'string' ? req.body.physicalExam.trim() : '',
     diagnostics: typeof req.body?.diagnostics === 'string' ? req.body.diagnostics.trim() : '',
     priorTreatment: typeof req.body?.priorTreatment === 'string' ? req.body.priorTreatment.trim() : '',
@@ -202,9 +204,15 @@ app.post('/api/ime', async (req, res) => {
     specificQuestions: typeof req.body?.specificQuestions === 'string' ? req.body.specificQuestions.trim() : '',
   };
 
-  if (!fields.historyOfInjury && !fields.recordsReviewed && !fields.physicalExam) {
+  if (
+    !fields.historyOfInjury &&
+    !fields.recordsReviewed &&
+    !fields.physicalExam &&
+    !fields.priorExamFindings
+  ) {
     return res.status(400).json({
-      error: 'Provide at least the history of injury, records summary, or physical exam findings before drafting.',
+      error:
+        'Provide at least the history of injury, records summary, or a physical exam (today or from records) before drafting.',
     });
   }
 
@@ -230,7 +238,16 @@ app.post('/api/ime', async (req, res) => {
     section('History of Present Injury', fields.historyOfInjury, 4000),
     section('Past Medical, Surgical, Social & Occupational History', fields.pastHistory, 3000),
     section('Records Reviewed (chronological summary)', fields.recordsReviewed, 20000),
-    section('Physical Examination Findings (today)', fields.physicalExam, 6000),
+    section(
+      "Prior Physical Exam Findings (from records — historical reference, NOT today's IME exam)",
+      fields.priorExamFindings,
+      8000
+    ),
+    section(
+      "Physical Examination — TODAY at the IME visit (performed by Dr. Tess)",
+      fields.physicalExam,
+      6000
+    ),
     section('Diagnostic Studies (imaging / EMG / labs)', fields.diagnostics, 4000),
     section('Prior Treatment & Response', fields.priorTreatment, 3000),
     '--- END CASE PACKET ---',
@@ -265,7 +282,7 @@ Rules:
 - Put each piece of information in the MOST APPROPRIATE field. If unsure, prefer 'recordsReviewed' (the chronological summary).
 - Do NOT invent facts, dates, providers, or findings that are not in the documents. If a field has no relevant content in the records, leave it as an empty string — do not guess.
 - For 'recordsReviewed', produce a CHRONOLOGICAL summary, one document per line or short paragraph, in the format: "MM/DD/YYYY — [document type] — [provider/facility] — [1–3 sentence summary of key findings, diagnoses, plan]". Include every encounter, imaging report, operative note, and PT/OT note you can identify.
-- For 'physicalExam', extract physical exam findings — ROM in degrees, MRC strength grades, special tests, neurological findings — only what is documented. This is for findings recorded in the source records, not a new exam.
+- For 'priorExamFindings', extract physical exam findings DOCUMENTED BY PRIOR PROVIDERS in the records — ROM in degrees, MRC strength grades, SLR, sensory and reflex findings, special tests — only what is documented. Format chronologically by exam date with the provider's name. This is reference material; Dr. Tess will perform and document her own examination at the IME visit, which goes into a SEPARATE field she fills in herself. Do NOT synthesize, summarize, or create a "new" exam in this field.
 - For 'diagnostics', extract imaging (MRI, X-ray, CT, US), EMG/NCS, and lab reports as they were written by the reporting clinician.
 - For 'priorTreatment', list conservative care, injections, surgeries, PT/OT response, medications, and work-status timeline.
 - Preserve every concrete number, date, dose, and provider name. These are medical-legal documents — accuracy is non-negotiable.
@@ -308,10 +325,10 @@ const EXTRACT_TOOL = {
         description:
           'A CHRONOLOGICAL summary of every document, encounter, and report extracted from the uploaded records. Format each line: "MM/DD/YYYY — [type] — [provider] — [key findings]". Include ED visits, urgent care, orthopedic/specialist evals, PT/OT notes, imaging reports, operative notes, follow-ups, and IMEs.',
       },
-      physicalExam: {
+      priorExamFindings: {
         type: 'string',
         description:
-          'Physical exam findings as documented in the records (vitals, inspection, palpation, ROM in degrees, MRC strength grades, neurological findings, special tests). Only what is documented.',
+          'Physical examination findings DOCUMENTED BY PRIOR PROVIDERS in the uploaded records — NOT a new exam. For each documented exam, include date, provider, and the findings (vitals, ROM in degrees, MRC strength grades, SLR, sensory and reflex findings, special tests). Format chronologically. This populates a reference section for Dr. Tess to compare against her own exam at the IME visit. Do NOT include the IME-day examination here — Dr. Tess will perform and document that herself.',
       },
       diagnostics: {
         type: 'string',
@@ -336,7 +353,7 @@ const EXTRACT_TOOL = {
       'historyOfInjury',
       'pastHistory',
       'recordsReviewed',
-      'physicalExam',
+      'priorExamFindings',
       'diagnostics',
       'priorTreatment',
       'notes',
@@ -437,7 +454,7 @@ app.post('/api/extract', async (req, res) => {
       historyOfInjury: '',
       pastHistory: '',
       recordsReviewed: '',
-      physicalExam: '',
+      priorExamFindings: '',
       diagnostics: '',
       priorTreatment: '',
       notes: '',
@@ -460,7 +477,7 @@ app.post('/api/extract', async (req, res) => {
       fields[k] = v || '';
     });
     // Narrative fields: concatenate with paragraph breaks
-    ['historyOfInjury', 'pastHistory', 'physicalExam', 'diagnostics', 'priorTreatment', 'notes'].forEach(
+    ['historyOfInjury', 'pastHistory', 'priorExamFindings', 'diagnostics', 'priorTreatment', 'notes'].forEach(
       (k) => join(k, '\n\n')
     );
     // Records reviewed: line-merge then chronological sort if dates present
