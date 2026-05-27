@@ -150,7 +150,10 @@ Independence, Missouri 64050"
               ></textarea>
             </div>
             <div class="field">
-              <label for="dateOfEval">Date examinee presented for IME</label>
+              <label for="dateOfEval">
+                Date of physical examination
+                <span class="field__hint">(the date Dr. Garcia performed the IME &mdash; appears in the Physical Exam section header)</span>
+              </label>
               <input id="dateOfEval" name="dateOfEval" type="text" placeholder="August 28, 2024" />
             </div>
             <div class="field">
@@ -274,7 +277,7 @@ Follow-up notes…"
             <div class="field field--today-exam">
               <label for="physicalExam">
                 Physical examination &mdash; TODAY at the IME visit
-                <span class="field__hint">(your own exam &mdash; this goes into the IME report)</span>
+                <span class="field__hint">(your own exam &mdash; this goes into the Physical Exam section of the IME)</span>
               </label>
               <textarea
                 id="physicalExam"
@@ -304,7 +307,7 @@ EMG/NCS RUE 06/01/2024 — moderate carpal tunnel right…"
             </div>
 
             <div class="ime-action-row">
-              <button type="submit" class="btn btn--primary" id="imeRun">Draft IME report</button>
+              <button type="submit" class="btn btn--primary" id="imeRun">Draft IME</button>
               <button type="button" class="btn btn--ghost" id="rtwHandoffBtn">
                 Draft RTW letter &rarr;
               </button>
@@ -325,7 +328,7 @@ EMG/NCS RUE 06/01/2024 — moderate carpal tunnel right…"
             </div>
             <pre class="studio__output ime-output" id="imeOutput" hidden></pre>
             <p class="studio__empty" id="imeEmpty">
-              The drafted IME report will appear here. It will include sections for records reviewed,
+              The drafted IME will appear here. It will include sections for records reviewed,
               history, exam, diagnoses, Missouri &ldquo;prevailing factor&rdquo; causation, MMI, PPD
               percentage(s) at the correct § 287.190 statutory level, work restrictions, future care,
               and a reviewer checklist of every assumption the draft made.

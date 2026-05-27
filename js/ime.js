@@ -231,7 +231,7 @@
     busy = state;
     if (runBtn) {
       runBtn.disabled = state;
-      runBtn.textContent = state ? 'Drafting…' : 'Draft IME report';
+      runBtn.textContent = state ? 'Drafting…' : 'Draft IME';
     }
   }
 
@@ -283,7 +283,7 @@
     if (empty) empty.hidden = true;
     if (copyBtn) copyBtn.hidden = true;
     if (downloadBtn) downloadBtn.hidden = true;
-    if (status) status.textContent = 'Drafting IME report with Claude — this can take 30–90 seconds for a full report…';
+    if (status) status.textContent = 'Drafting the IME with Claude — this can take 30–90 seconds for a full evaluation…';
     setBusy(true);
 
     var result = '';
