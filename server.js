@@ -152,7 +152,7 @@ Core principles — non-negotiable:
 4. PPD: Missouri does NOT mandate the AMA Guides. Express any PPD as a PERCENTAGE OF DISABILITY at the correct statutory level (RSMo § 287.190 — see schedule below) or of the BODY AS A WHOLE for unscheduled/spine/internal/psychiatric injuries. CRITICAL: If the examinee is NOT at Maximum Medical Improvement, do NOT assign a PPD percentage. Instead state that PPD determination is premature, explain why MMI has not been reached, recommend the treatment needed to reach MMI, and offer to rule on PPD once the examinee has completed that treatment. Dr. Garcia explicitly defers PPD when MMI is not yet established.
 5. **Scheduled weeks under RSMo § 287.190.1 (use to identify the statutory level):** thumb 60; index 45; middle 35; ring 30; little 22; hand 175; wrist 175; arm at/above elbow 210; arm at shoulder 232; great toe 40; other toe 16; foot 155; ankle 155; leg at/above knee 160; leg at hip 207; eye 140; hearing one ear 49 / both 180. Body as a whole = 400 weeks.
 6. Standard of medical opinion: every opinion "within a reasonable degree of medical certainty."
-7. Voice: first person ("I asked him...", "This examiner believes...", "I would like to point out..."). Educational asides in parentheses where they help the reader (e.g., "(also called the articular cartilage)"). Direct quotes from records in quotation marks with the source.
+7. Voice: first person ("I asked him...", "This examiner believes...", "I would like to point out..."). Educational asides in parentheses where they help the reader (e.g., "(also called the articular cartilage)"). Direct quotes from records in quotation marks with the source. When Dr. Garcia provides VOICE SAMPLES in the case packet, model the editorial tone, sentence rhythm, and willingness to editorialize on those samples — including pointed observations where the evidence supports them. Do not invent editorial digressions of your own; only adopt the voice she has already demonstrated.
 
 OUTPUT FORMAT — produce the letter EXACTLY in the structure below. Use plain text with the section headings shown. Do NOT use Markdown bullet symbols inside sections; use sentences and paragraphs. Do use **bold** for the section headers and the DISCUSSION question prompts.
 
@@ -244,8 +244,9 @@ In each answer:
 - State the opinion in plain first-person prose.
 - Cite specific findings, dates, providers, and records to support it.
 - Where appropriate, critique reasoning of prior providers using their own documentation against them.
-- Provide ICD-10 codes inline when naming diagnoses ("The 2026 ICD-10-CM code for this diagnosis is XXX.XX.").
-- For the PPD question: if not at MMI, say so explicitly, explain why, recommend treatment to reach MMI, and state Dr. Garcia will rule on PPD once the examinee has recovered from that treatment.
+- Provide ICD-10 codes inline ONLY for the primary diagnosis or diagnoses for which causation is being directly opined. Do NOT multiply codes for secondary, related, or incidental conditions (e.g., parameniscal cyst, Baker's cyst, loose bodies that accompany a meniscal tear) — Dr. Garcia will add those if she wants them. When in doubt, fewer codes is closer to her established practice. Use the format: "The 2026 ICD-10-CM code for this diagnosis is XXX.XX."
+- For the PPD question: if not at MMI, say so explicitly, explain why, recommend treatment to reach MMI, and state Dr. Garcia will rule on PPD once the examinee has recovered from that treatment. Do NOT commit to a future statutory level (e.g., "leg at the knee, 160 weeks") unless the case packet explicitly asks for it — leave the level open for her to set at the future PPD evaluation.
+- For the restrictions question: assess whether restrictions would meaningfully change the trajectory of this case. If the cycle of pain is already established, if the examinee is already self-modifying duties at work, or if the records show prior restrictions were ignored without consequence, SAY SO — Dr. Garcia's actual practice is to be honest about the limited value of restrictions in those situations, not to invent a conventional restriction list. Only list specific restrictions (lifting limit, posture changes, rest periods) when the case is genuinely pre-MMI in a way restrictions would help, or when the referring questions explicitly ask for them.
 
 ==== CLOSING ====
 
@@ -289,6 +290,7 @@ app.post('/api/ime', async (req, res) => {
     guidesEdition: typeof req.body?.guidesEdition === 'string' ? req.body.guidesEdition.trim() : '',
     jurisdiction: typeof req.body?.jurisdiction === 'string' ? req.body.jurisdiction.trim() : 'Missouri Workers’ Compensation (RSMo Chapter 287)',
     specificQuestions: typeof req.body?.specificQuestions === 'string' ? req.body.specificQuestions.trim() : '',
+    voiceSamples: typeof req.body?.voiceSamples === 'string' ? req.body.voiceSamples.trim() : '',
   };
 
   if (
@@ -317,6 +319,9 @@ app.post('/api/ime', async (req, res) => {
     fields.specificQuestions
       ? `Specific questions the referring party asked Dr. Garcia to answer (USE THESE EXACT QUESTIONS, BOLDED, IN THE DISCUSSION SECTION):\n${cap(fields.specificQuestions, 2000)}`
       : 'No specific questions provided — use Dr. Garcia’s standard question set for the Discussion section.',
+    fields.voiceSamples
+      ? `VOICE SAMPLES from Dr. Garcia's past IME reports — model the editorial tone, sentence rhythm, and willingness to editorialize on these samples. Do not copy phrases verbatim; absorb the voice and write in it.\n\n${cap(fields.voiceSamples, 8000)}`
+      : '',
     '',
     '--- LETTER HEADER ---',
     section('Date of letter (use today’s date if blank)', fields.letterDate, 100),

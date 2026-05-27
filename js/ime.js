@@ -255,6 +255,7 @@
       jurisdiction: readField('jurisdiction'),
       guidesEdition: readField('guidesEdition'),
       specificQuestions: readField('specificQuestions'),
+      voiceSamples: readField('voiceSamples'),
       chiefComplaint: readField('chiefComplaint'),
       historyOfInjury: readField('historyOfInjury'),
       pastHistory: readField('pastHistory'),
