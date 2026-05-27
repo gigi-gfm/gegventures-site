@@ -192,6 +192,8 @@
         if (!res.ok) throw new Error(json.error || 'Extraction failed.');
 
         var fields = (json && json.fields) || {};
+        setField('addressee', fields.addressee);
+        setField('reBlock', fields.reBlock);
         setField('examinee', fields.examinee);
         setField('caseInfo', fields.caseInfo);
         setField('chiefComplaint', fields.chiefComplaint);
@@ -243,8 +245,13 @@
     if (busy) return;
 
     var body = {
+      letterDate: readField('letterDate'),
+      addressee: readField('addressee'),
+      reBlock: readField('reBlock'),
       examinee: readField('examinee'),
       caseInfo: readField('caseInfo'),
+      dateOfEval: readField('dateOfEval'),
+      followUpConversation: readField('followUpConversation'),
       jurisdiction: readField('jurisdiction'),
       guidesEdition: readField('guidesEdition'),
       specificQuestions: readField('specificQuestions'),
@@ -339,4 +346,16 @@
   GegAI.getStatus().then(function (s) {
     if (!s.aiConfigured && banner) banner.hidden = false;
   });
+
+  // Default letter date to today, in "Month D, YYYY" format Dr. Garcia uses.
+  var letterDateInput = document.getElementById('letterDate');
+  if (letterDateInput && !letterDateInput.value) {
+    var today = new Date();
+    var months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December',
+    ];
+    letterDateInput.value =
+      months[today.getMonth()] + ' ' + today.getDate() + ', ' + today.getFullYear();
+  }
 })();

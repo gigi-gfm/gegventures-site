@@ -33,15 +33,18 @@
   <main>
     <section class="page-hero">
       <div class="wrap">
-        <span class="eyebrow">IME Studio &mdash; for Dr. Tess</span>
-        <h1>Draft thorough, evidence-supported IME reports — faster.</h1>
+        <span class="eyebrow">IME Studio &mdash; for Dr. Garcia</span>
+        <h1>Draft Garcia Family Medicine IME letters &mdash; in her format.</h1>
         <p class="lead">
-          Paste the case packet (records summary, history, physical exam, imaging).
-          The studio drafts a complete Independent Medical Examination report with
-          a Missouri-statute PPD percentage at the correct schedule level under
-          RSMo § 287.190, the &ldquo;prevailing factor&rdquo; causation analysis under § 287.020.3,
-          MMI status, work restrictions, and future-care recommendations. Every output is a draft for
-          Dr. Tess&rsquo;s review and signature.
+          Upload the records, enter today&rsquo;s exam, and the studio drafts a full
+          IME letter in Dr. Garcia&rsquo;s established format &mdash; letterhead, addressee,
+          RE block, Description of Injury, Present Symptoms, history sections,
+          Physical Exam, numbered narrative analysis of every records source, and
+          the Discussion section in question-and-answer form. Missouri
+          &ldquo;prevailing factor&rdquo; causation, MMI determination, PPD percentage at the
+          correct § 287.190 statutory level (or explicit deferral if not at MMI),
+          and future-care recommendations under § 287.140. Signed Theresa C.
+          Garcia MD, FAAFP, Dipl. ABOM. Every output is a draft for her review.
         </p>
       </div>
     </section>
@@ -105,6 +108,35 @@
 
         <div class="studio ime-studio">
           <form class="studio__form" id="imeForm">
+            <div class="ime-section-title">Letter header</div>
+            <div class="field">
+              <label for="letterDate">Date of letter <span class="field__hint">(today by default)</span></label>
+              <input id="letterDate" name="letterDate" type="text" placeholder="September 25, 2025" />
+            </div>
+            <div class="field">
+              <label for="addressee">Addressee <span class="field__hint">(referring attorney or claim examiner)</span></label>
+              <textarea
+                id="addressee"
+                name="addressee"
+                rows="4"
+                placeholder="Jason Iezzi
+Boyd, Kenter, Thomas &amp; Parrish
+221 West Lexington, Suite 200
+Independence, Missouri 64050"
+              ></textarea>
+            </div>
+            <div class="field">
+              <label for="reBlock">RE: block</label>
+              <textarea
+                id="reBlock"
+                name="reBlock"
+                rows="3"
+                placeholder="RE: Miguel Mendez v New Horizon Enterprises, LLC
+    Date of Injury: February 28, 2022
+    Injury Number: 22-079328"
+              ></textarea>
+            </div>
+
             <div class="ime-section-title">Examinee &amp; case</div>
             <div class="field">
               <label for="examinee">Examinee identifiers</label>
@@ -112,7 +144,23 @@
                 id="examinee"
                 name="examinee"
                 rows="2"
-                placeholder="Name, DOB, sex, dominant hand, employer, occupation at time of injury"
+                placeholder="Name, DOB, age, sex, ethnicity (if relevant), dominant hand, employer, years employed, occupation at time of injury"
+              ></textarea>
+            </div>
+            <div class="field">
+              <label for="dateOfEval">Date examinee presented for IME</label>
+              <input id="dateOfEval" name="dateOfEval" type="text" placeholder="August 28, 2024" />
+            </div>
+            <div class="field">
+              <label for="followUpConversation">
+                Follow-up phone conversation
+                <span class="field__hint">(if you spoke with the examinee after the visit to clarify details &mdash; mention if an interpreter was used)</span>
+              </label>
+              <textarea
+                id="followUpConversation"
+                name="followUpConversation"
+                rows="3"
+                placeholder="Used an interpreter. Asked about the mechanism in more detail; he clarified that David drove at him rapidly and dropped the scoop on his knee. Also asked why David did this — he stated retaliation for reporting wage violations…"
               ></textarea>
             </div>
             <div class="field">

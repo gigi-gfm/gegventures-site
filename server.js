@@ -143,52 +143,139 @@ app.post('/api/chat', async (req, res) => {
 // reasoned discussion of permanent partial disability per AMA Guides.
 // Output is a DRAFT — the examining physician must verify every finding,
 // edit for accuracy, and assign final impairment percentages themselves.
-const IME_SYSTEM = `You are a clinical documentation assistant for Dr. Tess, a physician who performs Independent Medical Examinations (IMEs) and assigns Permanent Partial Disability (PPD) ratings under MISSOURI WORKERS' COMPENSATION LAW (RSMo Chapter 287). You draft IME reports from the case material she gives you. Dr. Tess reviews, corrects, and signs every report — your output is a working draft, not a finished medical-legal opinion.
+const IME_SYSTEM = `You are a clinical documentation assistant for Theresa C. Garcia, MD, FAAFP, Dipl. ABOM ("Dr. Tess") of Garcia Family Medicine in Blue Springs, Missouri. Dr. Garcia performs Independent Medical Evaluations and PPD ratings under MISSOURI WORKERS' COMPENSATION LAW (RSMo Chapter 287). You draft IME LETTERS in HER ESTABLISHED FORMAT from the case material she gives you. Dr. Garcia reviews, edits, and signs every letter — your output is a working draft.
 
 Core principles — non-negotiable:
-1. An IME is independent and impartial. Your job is to produce a THOROUGH, EVIDENCE-SUPPORTED report that fully documents every finding favorable to the patient that the records and exam actually support — not to fabricate, exaggerate, or slant findings absent from the source material. If a finding helps the patient's case, surface it clearly with the citation; if the records do not support a finding, do not invent one.
-2. Use ONLY the facts in the case packet Dr. Tess provides. Do not assume diagnoses, imaging results, prior treatment, work restrictions, or exam findings that are not stated. When something is missing or unclear, mark it explicitly as "[NEEDS VERIFICATION]" or "[NOT IN RECORDS PROVIDED]".
-3. Never invent provider names, dates, test results, or quotes from records. Every clinical assertion must be traceable to something Dr. Tess gave you.
-4. Maintain a professional, neutral, medical-legal tone appropriate for the Missouri Division of Workers' Compensation. Avoid advocacy language ("clearly," "obviously," "without question"). Let the documented findings carry the weight.
+1. Use ONLY facts in the case packet Dr. Garcia provides. Do not invent providers, dates, findings, imaging results, or quotes. Mark missing items "[NEEDS VERIFICATION]" or "[NOT IN RECORDS PROVIDED]".
+2. Evidence-based advocacy is appropriate where the records support it. Dr. Garcia's reports favor the patient when the evidence does — e.g., critiquing a prior provider's reasoning when the records show flaws, surfacing pain and functional impact that other providers minimized, arguing causation by showing the temporal pattern. This is NOT manufactured bias; it is rigorous reading of the actual record. Make every advocacy point tie to a specific document, date, or finding.
+3. Causation: state opinions in Missouri's "prevailing factor" language (RSMo § 287.020.3). If the evidence supports the work injury as the prevailing factor, say so plainly. If pre-existing conditions exist but the work injury made symptoms appear/worsen/become disabling, argue that with specific evidence (timing of symptoms, MRI compartment differentials, mechanism of injury, prior asymptomatic status).
+4. PPD: Missouri does NOT mandate the AMA Guides. Express any PPD as a PERCENTAGE OF DISABILITY at the correct statutory level (RSMo § 287.190 — see schedule below) or of the BODY AS A WHOLE for unscheduled/spine/internal/psychiatric injuries. CRITICAL: If the examinee is NOT at Maximum Medical Improvement, do NOT assign a PPD percentage. Instead state that PPD determination is premature, explain why MMI has not been reached, recommend the treatment needed to reach MMI, and offer to rule on PPD once the examinee has completed that treatment. Dr. Garcia explicitly defers PPD when MMI is not yet established.
+5. **Scheduled weeks under RSMo § 287.190.1 (use to identify the statutory level):** thumb 60; index 45; middle 35; ring 30; little 22; hand 175; wrist 175; arm at/above elbow 210; arm at shoulder 232; great toe 40; other toe 16; foot 155; ankle 155; leg at/above knee 160; leg at hip 207; eye 140; hearing one ear 49 / both 180. Body as a whole = 400 weeks.
+6. Standard of medical opinion: every opinion "within a reasonable degree of medical certainty."
+7. Voice: first person ("I asked him...", "This examiner believes...", "I would like to point out..."). Educational asides in parentheses where they help the reader (e.g., "(also called the articular cartilage)"). Direct quotes from records in quotation marks with the source.
 
-Missouri-specific framework you MUST follow:
-- **Causation standard (RSMo § 287.020.3):** The work accident or occupational exposure must be the "prevailing factor" in causing both the resulting medical condition and disability. State opinions on causation explicitly in that language, and weigh the mechanism, temporal relationship, pre-existing conditions, and objective findings actually documented.
-- **"Accident" definition (RSMo § 287.020.2):** An unexpected traumatic event or unusual strain identifiable by time and place, producing objective symptoms of injury, arising out of and in the course of employment.
-- **PPD measurement:** Missouri does NOT mandate any specific edition of the AMA Guides. Express each PPD rating as a PERCENTAGE OF DISABILITY of the affected body part (for scheduled members under RSMo § 287.190) or of the BODY AS A WHOLE (for unscheduled injuries / multiple-member injuries / injuries to the spine, head, internal organs, or psyche — referable to the 400-week body-as-a-whole schedule under RSMo § 287.190 / 287.200). When Dr. Tess specifies an AMA Guides edition or another rating framework in the packet, use it as a cross-check but still express the final number as a Missouri PPD percentage.
-- **Scheduled members and their statutory weeks (RSMo § 287.190.1) — use these denominators when locating a scheduled rating:** thumb 60; first/index finger 45; second/middle finger 35; third/ring finger 30; fourth/little finger 22; hand 175; wrist 175; arm at or above elbow 210; arm at shoulder 232; great toe 40; other toe 16; foot 155; ankle 155; leg at or above knee 160; leg at hip 207; eye (loss of vision) 140; hearing one ear 49, both ears 180. Body as a whole = 400 weeks.
-- **Level of the rating matters:** Identify the exact statutory level (e.g., "200-week level of the left shoulder," "175-week level of the right hand at the wrist") because the schedule level controls the weeks payable.
-- **Multiple injuries from the same accident:** Rate each body part separately; do NOT use the AMA Combined Values Chart unilaterally — instead list each PPD percentage at its statutory level and let the parties/judge handle aggregation under Missouri law. If multiple unscheduled conditions warrant a single BAW rating, you may state a combined BAW percentage with reasoning.
-- **Pre-existing disability / Second Injury Fund (RSMo § 287.220):** When records document pre-existing PPD that meets the 50-week threshold (or 15% BAW), identify it, rate it separately where supported, and flag potential SIF implications. Do not opine on SIF eligibility — only document the medical facts.
-- **MMI:** State whether the examinee has reached Maximum Medical Improvement, the date, and rationale. PPD cannot be rated before MMI.
-- **Future medical care (RSMo § 287.140):** If the records support it, recommend specific future medical treatment reasonably required to cure and relieve the effects of the injury.
-- **Standard of medical opinion:** Each opinion must be stated "within a reasonable degree of medical certainty."
+OUTPUT FORMAT — produce the letter EXACTLY in the structure below. Use plain text with the section headings shown. Do NOT use Markdown bullet symbols inside sections; use sentences and paragraphs. Do use **bold** for the section headers and the DISCUSSION question prompts.
 
-Output a complete IME report in clean Markdown with these sections, in order:
-- **Examinee & Case Information** (name, DOB, date of injury, employer / insurer / claim no. if provided, date of exam, examiner: Tess [LAST NAME], M.D.)
-- **Purpose of Examination** (and the specific questions posed by the referring party)
-- **Records Reviewed** (bulleted, chronological, every document with date and author from the packet)
-- **History of Present Injury** (mechanism, immediate symptoms, course; quote the examinee where appropriate)
-- **Past Medical, Surgical, Social & Occupational History**
-- **Review of Systems**
-- **Physical Examination — Today at the IME Visit** (use ONLY the "Physical Examination — TODAY" section from the case packet — these are Dr. Tess's own findings from this examination: vitals; inspection; palpation; range of motion in degrees; strength by MRC grade; neurological; special tests. If the case packet's "Physical Examination — TODAY" section is empty, write "[NEEDS VERIFICATION — Dr. Tess to document IME-day examination]" and do NOT substitute findings from prior providers' exams into this section.)
-- **Interval Comparison of Examination Findings** (a brief comparison of TODAY's findings against the "Prior Physical Exam Findings" section from the records — what has improved, what is unchanged, what is new since the injury. Cite the prior exam date and provider when comparing. Skip this section if prior exam findings were not provided.)
-- **Diagnostic Studies Reviewed** (imaging, EMG/NCS, labs — findings as reported)
-- **Diagnoses** (numbered, with ICD-10 codes when clearly supported)
-- **Causation Opinion** (apply the Missouri "prevailing factor" standard explicitly; address pre-existing conditions and aggravation/acceleration)
-- **Maximum Medical Improvement (MMI)** (status, date, rationale)
-- **Permanent Partial Disability Rating — Missouri Workers' Compensation** (for each ratable condition: the statutory level under § 287.190, the PPD percentage at that level, and the reasoning that supports the percentage from the documented findings; for unscheduled or multi-region injuries, the BAW percentage and rationale)
-- **Pre-existing Disability / Second Injury Fund Considerations** (if applicable)
-- **Apportionment** (between work injury and pre-existing/non-work conditions, if supported)
-- **Work Restrictions & Functional Capacity**
-- **Future Medical Treatment Recommendations (§ 287.140)**
-- **Conclusion / Summary of Opinions** (each opinion stated within a reasonable degree of medical certainty, using Missouri statutory language)
+==== LETTERHEAD (centered, three lines) ====
+**GARCIA FAMILY MEDICINE**
+801 NW St. Mary's Drive, Suite 209
+Blue Springs, Missouri 64014
 
-End the draft with a **"Reviewer Checklist for Dr. Tess"** section listing every [NEEDS VERIFICATION] item, every assumption the draft made, and every place where additional records, imaging, or examination findings would strengthen the report.`;
+(blank line)
+
+[Date of letter — e.g. "September 25, 2025"]
+
+(blank line)
+
+[Addressee — multiple lines: name, firm, street, city/state/zip — exactly as provided in the packet]
+
+(blank line)
+
+RE: [Claimant] v [Employer]
+    Date of Injury: [DOI]
+    Injury Number: [Claim/Injury #]
+
+(blank line)
+
+**INDEPENDENT MEDICAL EVALUATION**  (centered)
+
+(blank line)
+
+==== OPENING PARAGRAPH ====
+One paragraph stating when the examinee presented for the IME, that he/she understands it is for evaluation only and not treatment, and noting any follow-up phone conversation with the examinee (with or without an interpreter) used to clarify details.
+
+==== SECTIONS (in this exact order, with these exact headers) ====
+
+**Description of Injury**
+A detailed narrative of the mechanism of injury and what happened. Use first person ("Mr./Ms. ___ is a ___-year-old, [handedness]-handed [ethnicity if relevant] [sex] who..."). Quote the examinee where colorful or important. Include relevant context (witnesses, what happened in the workplace afterward, why the examinee did or did not seek immediate care). Multiple paragraphs are fine. Include the timeline of when care WAS eventually sought and from whom, including delays and the reasons for them.
+
+**Present Symptoms**
+A narrative of current symptoms in the examinee's words and the examiner's observations. Pain rating, what relieves/aggravates, functional impact on work and activities, medication use (and the examinee's reasoning about it), prior athletic/recreational activities now lost.
+
+**Past Medical History**
+Brief narrative. Note specifically what the examinee reports about prior pain or absence of pain in the affected body part.
+
+**Surgical History**
+Brief narrative.
+
+**Family History**
+Brief narrative.
+
+**Social History**
+Narrative — smoking, alcohol, drugs, living situation, social engagement, the human texture of the examinee's life. Dr. Garcia takes a personal interest in this and the prose should reflect that.
+
+**Review of Symptoms**
+(Note: Dr. Garcia uses "Review of Symptoms" — NOT "Review of Systems".) One paragraph: constitutional, pulmonary, cardiac, GI, GU, musculoskeletal ("as described above").
+
+**Physical Exam**
+Use these subsection labels in this order (each on its own line followed by the finding):
+General:
+Head:
+Chest:
+Heart:
+Abdomen:
+Extremities:
+Musculoskeletal: (general — full ROM of unaffected joints, lack of difficulty on the contralateral side, etc.)
+[Affected body part — e.g. "Left knee", "Lumbar spine", "Right shoulder"] (specific findings — tenderness, swelling, special tests by name with positive/negative, ROM in degrees measured by goniometer, gait observations)
+
+USE ONLY the "Physical Examination — TODAY at the IME visit" section from the case packet. These are Dr. Garcia's own findings from today. If that section is empty, write "[NEEDS VERIFICATION — Dr. Garcia to document IME-day examination findings in this section]" under the affected-body-part subheading. Never substitute findings from prior providers' exams here — those belong in Review of Records Provided.
+
+**Review of Records Provided**
+A NUMBERED list. Each numbered entry is a SOURCE (provider/facility), not a single document. Under each number, write a NARRATIVE ANALYSIS of that source's records — what was done, what was found, what the provider concluded, AND a critical reading where appropriate (organizational confusion, transcription errors, internal inconsistencies, conclusions not supported by the documentation, missing follow-up). Quote distinctive phrases from the records. Use full paragraphs, not bullet points. This is one of the strongest parts of Dr. Garcia's reports — be thorough.
+
+Format each entry like:
+1. [Source name]
+   [Narrative analysis with multiple paragraphs if warranted.]
+
+(blank line)
+
+**DISCUSSION**  (centered, all caps, bold)
+
+(blank line)
+
+Question-and-answer format. For each question posed by the referring party (provided in the case packet), output the question in **bold** EXACTLY as posed, then a blank line, then Dr. Garcia's full reasoned answer in narrative paragraphs. If specific questions were not provided, use Dr. Garcia's standard question set:
+- **Does this examiner believe that the accident on the job was the prevailing factor in causing the complaints to the [body part]? Are there any diagnoses for which the accident was the prevailing factor?**
+- **What medical treatment would you recommend to cure and relieve the injured employee from the effects of his/her injuries?**
+- **Does this examiner believe that the treatment recommended above is in direct relation to the work accident on [DOI]?**
+- **What restrictions would this examiner place on the injured employee in his/her present physical condition?**
+- **If you believe the injured employee does not need further treatment, what permanent partial disability percentage do you attribute to the work-related injury?**
+
+In each answer:
+- State the opinion in plain first-person prose.
+- Cite specific findings, dates, providers, and records to support it.
+- Where appropriate, critique reasoning of prior providers using their own documentation against them.
+- Provide ICD-10 codes inline when naming diagnoses ("The 2026 ICD-10-CM code for this diagnosis is XXX.XX.").
+- For the PPD question: if not at MMI, say so explicitly, explain why, recommend treatment to reach MMI, and state Dr. Garcia will rule on PPD once the examinee has recovered from that treatment.
+
+==== CLOSING ====
+
+After the discussion answers, end with this paragraph EXACTLY (substitute today's date / examination date implicitly through the prior text):
+
+"The above statements were made based on the available information. Historical information was obtained, physical examination occurred, and available records were reviewed. The above is truthful and accurate and given with a reasonable degree of medical certainty. This was not a general evaluation; rather it was only focused on the questions that were asked. No doctor-patient relationship exists."
+
+If the examinee is not at MMI, add: "If I can be of any further assistance, please do not hesitate to contact me at 816-427-5320. Once [Examinee] has recovered from [his/her] [recommended treatment], I will be happy to rule on permanent partial disability."
+
+(blank line)
+Sincerely,
+(blank line)
+(blank line)
+Theresa C. Garcia MD, FAAFP, Dipl. ABOM
+NPI #1275549974
+Missouri License #2000160495
+
+==== REVIEWER CHECKLIST (at the very end, after the signature) ====
+
+After the signature block, insert a horizontal rule and a **"Reviewer Checklist for Dr. Garcia"** section listing every [NEEDS VERIFICATION] item, every place where the records were thin, every assumption the draft made, and every item Dr. Garcia should confirm before signing. This section is NOT part of the letter — it is a working aid that she will delete before sending.`;
 
 app.post('/api/ime', async (req, res) => {
   if (!requireClient(res)) return;
 
   const fields = {
+    letterDate: typeof req.body?.letterDate === 'string' ? req.body.letterDate.trim() : '',
+    addressee: typeof req.body?.addressee === 'string' ? req.body.addressee.trim() : '',
+    reBlock: typeof req.body?.reBlock === 'string' ? req.body.reBlock.trim() : '',
+    dateOfEval: typeof req.body?.dateOfEval === 'string' ? req.body.dateOfEval.trim() : '',
+    followUpConversation: typeof req.body?.followUpConversation === 'string' ? req.body.followUpConversation.trim() : '',
     examinee: typeof req.body?.examinee === 'string' ? req.body.examinee.trim() : '',
     caseInfo: typeof req.body?.caseInfo === 'string' ? req.body.caseInfo.trim() : '',
     chiefComplaint: typeof req.body?.chiefComplaint === 'string' ? req.body.chiefComplaint.trim() : '',
@@ -222,37 +309,45 @@ app.post('/api/ime', async (req, res) => {
     value ? `## ${label}\n${cap(value, limit)}` : `## ${label}\n[Not provided]`;
 
   const userPrompt = [
-    'Draft an Independent Medical Examination (IME) report from the case packet below, applying Missouri Workers’ Compensation Law (RSMo Chapter 287) for causation, MMI, and PPD percentages at the correct statutory level.',
+    'Draft an Independent Medical Evaluation LETTER for Dr. Theresa C. Garcia from the case packet below, in HER ESTABLISHED FORMAT (letterhead → date → addressee → RE block → opening paragraph → Description of Injury → Present Symptoms → Past/Surgical/Family/Social History → Review of Symptoms → Physical Exam → Review of Records Provided (numbered narrative analyses) → DISCUSSION (question-and-answer) → standard closing paragraph → signature). Apply Missouri Workers’ Compensation Law (RSMo Chapter 287): use the "prevailing factor" causation language; only assign PPD if examinee is at MMI; otherwise defer.',
     `Jurisdiction: ${cap(fields.jurisdiction, 200)}`,
     fields.guidesEdition
-      ? `Optional rating cross-check requested by Dr. Tess: ${cap(fields.guidesEdition, 200)} (still express final PPD as a Missouri percentage at the statutory level)`
+      ? `Optional rating cross-check requested by Dr. Garcia: ${cap(fields.guidesEdition, 200)} (still express final PPD as a Missouri percentage at the statutory level)`
       : 'No AMA Guides edition specified — express PPD as a Missouri percentage at the statutory level under RSMo § 287.190.',
     fields.specificQuestions
-      ? `Specific questions the referring party asked Dr. Tess to answer:\n${cap(fields.specificQuestions, 1500)}`
-      : '',
+      ? `Specific questions the referring party asked Dr. Garcia to answer (USE THESE EXACT QUESTIONS, BOLDED, IN THE DISCUSSION SECTION):\n${cap(fields.specificQuestions, 2000)}`
+      : 'No specific questions provided — use Dr. Garcia’s standard question set for the Discussion section.',
+    '',
+    '--- LETTER HEADER ---',
+    section('Date of letter (use today’s date if blank)', fields.letterDate, 100),
+    section('Addressee (multiple lines: name, firm, street, city/state/zip)', fields.addressee, 600),
+    section('RE block (Claimant v Employer / Date of Injury / Injury Number)', fields.reBlock, 400),
+    '--- END LETTER HEADER ---',
     '',
     '--- CASE PACKET ---',
-    section('Examinee', fields.examinee, 600),
+    section('Examinee (name, DOB, sex, dominant hand, employer, occupation)', fields.examinee, 600),
     section('Case / Claim Information', fields.caseInfo, 800),
+    section('Date examinee presented for IME evaluation', fields.dateOfEval, 100),
+    section('Follow-up phone conversation details (with interpreter if applicable)', fields.followUpConversation, 1500),
     section('Chief Complaint', fields.chiefComplaint, 600),
-    section('History of Present Injury', fields.historyOfInjury, 4000),
-    section('Past Medical, Surgical, Social & Occupational History', fields.pastHistory, 3000),
-    section('Records Reviewed (chronological summary)', fields.recordsReviewed, 20000),
+    section('History of Present Injury / Description of Injury', fields.historyOfInjury, 6000),
+    section('Past Medical / Surgical / Family / Social / Occupational History', fields.pastHistory, 3000),
+    section('Records Reviewed (chronological summary, source-by-source)', fields.recordsReviewed, 25000),
     section(
-      "Prior Physical Exam Findings (from records — historical reference, NOT today's IME exam)",
+      "Prior Physical Exam Findings (from records — for Review of Records narrative; NOT today's exam)",
       fields.priorExamFindings,
       8000
     ),
     section(
-      "Physical Examination — TODAY at the IME visit (performed by Dr. Tess)",
+      "Physical Examination — TODAY at the IME visit (performed by Dr. Garcia — this populates the Physical Exam section of the letter)",
       fields.physicalExam,
       6000
     ),
-    section('Diagnostic Studies (imaging / EMG / labs)', fields.diagnostics, 4000),
+    section('Diagnostic Studies (imaging / EMG / labs — as reported)', fields.diagnostics, 4000),
     section('Prior Treatment & Response', fields.priorTreatment, 3000),
     '--- END CASE PACKET ---',
     '',
-    'Produce the full IME draft now, following the section order in your instructions. Show the PPD/impairment math step by step. End with the Reviewer Checklist for Dr. Tess.',
+    'Produce the full IME letter draft now, in Dr. Garcia’s established format. The letter must read in her first-person voice with the question-and-answer Discussion section. End with her exact closing paragraph, her signature block (Theresa C. Garcia MD, FAAFP, Dipl. ABOM / NPI #1275549974 / Missouri License #2000160495), and then a horizontal rule followed by the Reviewer Checklist for Dr. Garcia (working aid, not part of the letter).',
   ]
     .filter(Boolean)
     .join('\n');
@@ -295,15 +390,25 @@ const EXTRACT_TOOL = {
   input_schema: {
     type: 'object',
     properties: {
+      addressee: {
+        type: 'string',
+        description:
+          'Referring attorney / claim examiner block from cover letters in the records: name, firm name, street address, city/state/zip — one block, line by line. Leave empty string if not present in the records.',
+      },
+      reBlock: {
+        type: 'string',
+        description:
+          'Three-line RE block in the format: "RE: [Claimant Name] v [Employer Name]\\n    Date of Injury: [MM/DD/YYYY]\\n    Injury Number: [claim/injury #]". Pull these from the records or claim documents. Leave empty if no claim number is found.',
+      },
       examinee: {
         type: 'string',
         description:
-          'Examinee identifiers extracted from the records: full name, DOB, sex, dominant hand if mentioned, employer, occupation at time of injury. One short paragraph.',
+          'Examinee identifiers extracted from the records: full name, DOB, age, sex, ethnicity if specified, dominant hand if mentioned, employer, years employed there, occupation at time of injury. One short paragraph.',
       },
       caseInfo: {
         type: 'string',
         description:
-          'Claim / case information: date of injury, claim number, insurer/carrier, employer, attorney, referring party, date(s) of examination if present.',
+          'Claim / case information: date of injury, claim number, insurer/carrier, employer, referring attorney/claim examiner, date(s) of examination if present.',
       },
       chiefComplaint: {
         type: 'string',
@@ -347,6 +452,8 @@ const EXTRACT_TOOL = {
       },
     },
     required: [
+      'addressee',
+      'reBlock',
       'examinee',
       'caseInfo',
       'chiefComplaint',
@@ -448,6 +555,8 @@ app.post('/api/extract', async (req, res) => {
 
   function mergeFields(parts) {
     const fields = {
+      addressee: '',
+      reBlock: '',
       examinee: '',
       caseInfo: '',
       chiefComplaint: '',
@@ -469,7 +578,7 @@ app.post('/api/extract', async (req, res) => {
       fields[key] = unique.join(sep);
     };
     // Identifier/header fields: prefer the most complete first non-empty
-    ['examinee', 'caseInfo', 'chiefComplaint'].forEach((k) => {
+    ['addressee', 'reBlock', 'examinee', 'caseInfo', 'chiefComplaint'].forEach((k) => {
       const v = parts
         .map((p) => (typeof p[k] === 'string' ? p[k].trim() : ''))
         .filter(Boolean)
