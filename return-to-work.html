@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Return-to-Work Letter | Garcia Family Medicine</title>
+  <meta name="description" content="Draft a return-to-work or work-status letter from Garcia Family Medicine on the patient's behalf, in seconds." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/ime.css" />
+  <link rel="stylesheet" href="css/letter-tools.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="index.html"><span class="brand__mark">G</span> Gegventures</a>
+      <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <nav class="nav">
+        <a href="index.html">Home</a>
+        <a href="services.html">Services</a>
+        <a href="about.html">About</a>
+        <a href="studio.html">AI Studio</a>
+        <a href="ime-studio.html">IME Studio</a>
+        <a href="referral.html">Referrals</a>
+        <a href="return-to-work.html" class="is-active">RTW</a>
+        <a href="contact.html">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="page-hero">
+      <div class="wrap">
+        <span class="eyebrow">Clinic Studio &mdash; Return-to-Work</span>
+        <h1>Work-status letters for the patient&rsquo;s employer.</h1>
+        <p class="lead">
+          Off-work, light-duty with restrictions, or full-duty release. The studio
+          drafts a clear letter on Garcia Family Medicine letterhead that the
+          patient can take to HR. Signed Theresa C. Garcia MD, FAAFP, Dipl. ABOM.
+          Draft only &mdash; review and sign before sending.
+        </p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap">
+        <div class="ai-banner" id="aiBanner" hidden>
+          The AI backend isn&rsquo;t configured yet. Add an <code>ANTHROPIC_API_KEY</code>
+          to your <code>.env</code> file and restart the server to enable drafting.
+        </div>
+
+        <div class="tool-disclaimer">
+          <strong>Draft only.</strong> Dr. Garcia reviews and signs every letter.
+          Diagnostic detail is kept to the minimum needed for the work-status
+          decision &mdash; HR does not need the full clinical picture.
+        </div>
+
+        <div class="letter-tool">
+          <form class="letter-tool__form" id="rtwForm">
+            <div class="ime-section-title">Letter header</div>
+            <div class="field">
+              <label for="letterDate">Date of letter <span class="field__hint">(today by default)</span></label>
+              <input id="letterDate" name="letterDate" type="text" />
+            </div>
+            <div class="field">
+              <label for="patient">Patient</label>
+              <textarea
+                id="patient"
+                name="patient"
+                rows="2"
+                required
+                placeholder="Name, DOB"
+              ></textarea>
+            </div>
+            <div class="field">
+              <label for="employer">Employer / HR contact <span class="field__hint">(optional &mdash; otherwise &ldquo;To Whom It May Concern&rdquo;)</span></label>
+              <textarea
+                id="employer"
+                name="employer"
+                rows="3"
+                placeholder="Diana Reyes, HR Manager
+Midland Distribution, Inc.
+4250 W Kearney St, Springfield, MO 65803"
+              ></textarea>
+            </div>
+
+            <div class="ime-section-title">Work status</div>
+            <div class="field">
+              <label for="workStatus">Work status</label>
+              <select id="workStatus" name="workStatus" required>
+                <option value="">-- choose one --</option>
+                <option value="Off work entirely">Off work entirely</option>
+                <option value="Light duty with restrictions">Light duty with restrictions</option>
+                <option value="Full duty release">Full duty release (no restrictions)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="effectiveDates">Effective dates</label>
+              <input
+                id="effectiveDates"
+                name="effectiveDates"
+                type="text"
+                placeholder="May 27, 2026 through June 24, 2026 (re-evaluation)"
+              />
+            </div>
+            <div class="field">
+              <label for="restrictions">
+                Restrictions
+                <span class="field__hint">(only if light duty)</span>
+              </label>
+              <textarea
+                id="restrictions"
+                name="restrictions"
+                rows="5"
+                placeholder="No lifting > 15 lb
+No repetitive bending or twisting
+Alternate sitting / standing every 30 minutes
+No operation of heavy machinery"
+              ></textarea>
+            </div>
+            <div class="field">
+              <label for="reasonForLetter">
+                Brief medical context
+                <span class="field__hint">(kept minimal in the letter &mdash; only what HR needs)</span>
+              </label>
+              <textarea
+                id="reasonForLetter"
+                name="reasonForLetter"
+                rows="3"
+                placeholder="Acute lumbar strain following work-related injury 05/14/2026."
+              ></textarea>
+            </div>
+            <div class="field">
+              <label for="followUp">Next follow-up appointment</label>
+              <input
+                id="followUp"
+                name="followUp"
+                type="text"
+                placeholder="June 24, 2026"
+              />
+            </div>
+
+            <button type="submit" class="btn btn--primary" id="runBtn">Draft work-status letter</button>
+            <p class="form-note" id="status" role="status"></p>
+          </form>
+
+          <div class="letter-tool__result">
+            <div class="letter-tool__result-head">
+              <h3>Work-status letter draft</h3>
+              <div class="letter-result-actions">
+                <button type="button" class="btn btn--ghost" id="downloadBtn" hidden>Download .md</button>
+                <button type="button" class="btn btn--ghost" id="copyBtn" hidden>Copy</button>
+              </div>
+            </div>
+            <pre class="letter-tool__output" id="output" hidden></pre>
+            <p class="letter-tool__empty" id="empty">
+              The work-status letter draft will appear here. Review every line before signing.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="footer-bottom">
+        <span>&copy; <span data-year>2026</span> Gegventures. All rights reserved.</span>
+        <span>Drafts only &mdash; physician verifies and signs every letter</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/letter-tools.js"></script>
+  <script>
+    LetterTools.init({
+      formId: 'rtwForm',
+      outputId: 'output',
+      emptyId: 'empty',
+      statusId: 'status',
+      runBtnId: 'runBtn',
+      copyBtnId: 'copyBtn',
+      downloadBtnId: 'downloadBtn',
+      bannerId: 'aiBanner',
+      dateFieldId: 'letterDate',
+      endpoint: '/api/return-to-work',
+      runLabel: 'Draft work-status letter',
+      busyLabel: 'Drafting…',
+      startMessage: 'Drafting work-status letter…',
+      successMessage: 'Letter ready. Review and sign before sending.',
+      downloadName: 'work-status',
+      fields: [
+        'letterDate', 'patient', 'employer', 'workStatus',
+        'effectiveDates', 'restrictions', 'reasonForLetter', 'followUp',
+      ],
+      requiredFields: ['patient', 'workStatus'],
+      requiredMessages: {
+        patient: 'Add the patient information.',
+        workStatus: 'Choose a work status.',
+      },
+    });
+  </script>
+</body>
+</html>

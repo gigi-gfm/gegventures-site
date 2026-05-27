@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Referral Letter | Garcia Family Medicine</title>
+  <meta name="description" content="Draft a referral letter from Garcia Family Medicine to a consulting specialist." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/ime.css" />
+  <link rel="stylesheet" href="css/letter-tools.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="index.html"><span class="brand__mark">G</span> Gegventures</a>
+      <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <nav class="nav">
+        <a href="index.html">Home</a>
+        <a href="services.html">Services</a>
+        <a href="about.html">About</a>
+        <a href="studio.html">AI Studio</a>
+        <a href="ime-studio.html">IME Studio</a>
+        <a href="referral.html" class="is-active">Referrals</a>
+        <a href="return-to-work.html">RTW</a>
+        <a href="contact.html">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="page-hero">
+      <div class="wrap">
+        <span class="eyebrow">Clinic Studio &mdash; Referrals</span>
+        <h1>Specialist referral letters &mdash; in seconds.</h1>
+        <p class="lead">
+          Enter the patient, the receiving specialist, the clinical question, and
+          the pertinent findings. The studio drafts a referral letter on Garcia
+          Family Medicine letterhead, signed by Theresa C. Garcia MD, FAAFP,
+          Dipl. ABOM. Draft only &mdash; review and sign before sending.
+        </p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap">
+        <div class="ai-banner" id="aiBanner" hidden>
+          The AI backend isn&rsquo;t configured yet. Add an <code>ANTHROPIC_API_KEY</code>
+          to your <code>.env</code> file and restart the server to enable drafting.
+        </div>
+
+        <div class="tool-disclaimer">
+          <strong>Draft only.</strong> Dr. Garcia reviews and signs every letter.
+          The studio uses only the information you provide &mdash; nothing is
+          invented. Marks gaps as <code>[NEEDS VERIFICATION]</code>.
+        </div>
+
+        <div class="letter-tool">
+          <form class="letter-tool__form" id="referralForm">
+            <div class="ime-section-title">Letter header</div>
+            <div class="field">
+              <label for="letterDate">Date of letter <span class="field__hint">(today by default)</span></label>
+              <input id="letterDate" name="letterDate" type="text" />
+            </div>
+            <div class="field">
+              <label for="patient">Patient</label>
+              <textarea
+                id="patient"
+                name="patient"
+                rows="2"
+                required
+                placeholder="Name, DOB, MRN, contact info"
+              ></textarea>
+            </div>
+            <div class="field">
+              <label for="recipient">Recipient <span class="field__hint">(specialist)</span></label>
+              <textarea
+                id="recipient"
+                name="recipient"
+                rows="4"
+                required
+                placeholder="Dr. Jane Smith, MD
+Springfield Orthopedic Associates
+1234 Main Street, Suite 200
+Springfield, MO 65801"
+              ></textarea>
+            </div>
+            <div class="field">
+              <label for="specialty">Specialty / focus <span class="field__hint">(optional)</span></label>
+              <input
+                id="specialty"
+                name="specialty"
+                type="text"
+                placeholder="Orthopedic spine, cardiology, GI, etc."
+              />
+            </div>
+
+            <div class="ime-section-title">Clinical</div>
+            <div class="field">
+              <label for="reason">Reason for referral / clinical question</label>
+              <textarea
+                id="reason"
+                name="reason"
+                rows="3"
+                required
+                placeholder="Persistent low back pain with right L5 radicular symptoms — please evaluate for surgical candidacy."
+              ></textarea>
+            </div>
+            <div class="field">
+              <label for="clinicalHistory">Relevant clinical history</label>
+              <textarea
+                id="clinicalHistory"
+                name="clinicalHistory"
+                rows="5"
+                placeholder="Onset, course, prior episodes, relevant PMHx, surgical history."
+              ></textarea>
+            </div>
+            <div class="field">
+              <label for="examLabsImaging">Pertinent exam, labs, imaging</label>
+              <textarea
+                id="examLabsImaging"
+                name="examLabsImaging"
+                rows="5"
+                placeholder="Today's exam findings; relevant labs and imaging with dates."
+              ></textarea>
+            </div>
+            <div class="field">
+              <label for="medications">Current medications &amp; what's been tried</label>
+              <textarea
+                id="medications"
+                name="medications"
+                rows="3"
+                placeholder="NSAIDs, gabapentin, PT 6 sessions, ESI x1…"
+              ></textarea>
+            </div>
+            <div class="field">
+              <label for="urgency">Urgency <span class="field__hint">(optional)</span></label>
+              <input
+                id="urgency"
+                name="urgency"
+                type="text"
+                placeholder="Within 2 weeks / routine / urgent"
+              />
+            </div>
+
+            <button type="submit" class="btn btn--primary" id="runBtn">Draft referral letter</button>
+            <p class="form-note" id="status" role="status"></p>
+          </form>
+
+          <div class="letter-tool__result">
+            <div class="letter-tool__result-head">
+              <h3>Referral letter draft</h3>
+              <div class="letter-result-actions">
+                <button type="button" class="btn btn--ghost" id="downloadBtn" hidden>Download .md</button>
+                <button type="button" class="btn btn--ghost" id="copyBtn" hidden>Copy</button>
+              </div>
+            </div>
+            <pre class="letter-tool__output" id="output" hidden></pre>
+            <p class="letter-tool__empty" id="empty">
+              The referral letter draft will appear here. Review every line before signing.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="footer-bottom">
+        <span>&copy; <span data-year>2026</span> Gegventures. All rights reserved.</span>
+        <span>Drafts only &mdash; physician verifies and signs every letter</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/letter-tools.js"></script>
+  <script>
+    LetterTools.init({
+      formId: 'referralForm',
+      outputId: 'output',
+      emptyId: 'empty',
+      statusId: 'status',
+      runBtnId: 'runBtn',
+      copyBtnId: 'copyBtn',
+      downloadBtnId: 'downloadBtn',
+      bannerId: 'aiBanner',
+      dateFieldId: 'letterDate',
+      endpoint: '/api/referral',
+      runLabel: 'Draft referral letter',
+      busyLabel: 'Drafting…',
+      startMessage: 'Drafting referral letter…',
+      successMessage: 'Letter ready. Review and sign before sending.',
+      downloadName: 'referral',
+      fields: [
+        'letterDate', 'patient', 'recipient', 'specialty', 'reason',
+        'clinicalHistory', 'examLabsImaging', 'medications', 'urgency',
+      ],
+      requiredFields: ['patient', 'recipient', 'reason'],
+      requiredMessages: {
+        patient: 'Add the patient information.',
+        recipient: 'Add the receiving specialist.',
+        reason: 'Add the reason for the referral.',
+      },
+    });
+  </script>
+</body>
+</html>

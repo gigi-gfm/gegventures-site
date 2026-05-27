@@ -371,6 +371,220 @@ app.post('/api/ime', async (req, res) => {
   );
 });
 
+// =====================================================================
+// Garcia Family Medicine — shared letterhead + signature for all letters
+// =====================================================================
+const GFM_LETTERHEAD = `**GARCIA FAMILY MEDICINE**
+801 NW St. Mary's Drive, Suite 209
+Blue Springs, Missouri 64014
+Phone: 816-427-5320`;
+
+const GFM_SIGNATURE = `Sincerely,
+
+
+Theresa C. Garcia MD, FAAFP, Dipl. ABOM
+NPI #1275549974
+Missouri License #2000160495`;
+
+// =====================================================================
+// Referral letter generator
+// =====================================================================
+const REFERRAL_SYSTEM = `You are a clinical documentation assistant for Theresa C. Garcia, MD, FAAFP, Dipl. ABOM ("Dr. Tess") of Garcia Family Medicine in Blue Springs, Missouri. You draft REFERRAL LETTERS from her practice to consulting specialists. She reviews, edits, and signs every letter.
+
+Rules:
+- Use ONLY the patient and clinical information provided in the case packet. Do NOT invent diagnoses, findings, labs, imaging, or medications.
+- Mark any gap with "[NEEDS VERIFICATION]".
+- Professional, concise, warm tone — peer-to-peer physician communication.
+- Output the letter in this exact format:
+
+==== LETTERHEAD (centered, four lines) ====
+**GARCIA FAMILY MEDICINE**
+801 NW St. Mary's Drive, Suite 209
+Blue Springs, Missouri 64014
+Phone: 816-427-5320
+
+(blank line)
+
+[Date]
+
+(blank line)
+
+[Recipient block — specialist name, practice, street, city/state/zip]
+
+(blank line)
+
+RE: [Patient name], DOB [DOB], MRN [if provided]
+
+(blank line)
+
+Dear Dr. [Last name],
+
+==== BODY (3–5 short paragraphs) ====
+Paragraph 1: One-sentence statement of who the patient is and what specialty consultation is being requested, with the clinical question.
+Paragraph 2: Pertinent history — onset, course, relevant past medical/surgical history.
+Paragraph 3: Pertinent exam findings, labs, and imaging — only what was provided.
+Paragraph 4: Current medications and what has already been tried.
+Paragraph 5: Specific ask of the consultant ("Please evaluate and advise on…"), urgency if any, and offer to provide additional information.
+
+==== CLOSING ====
+Thank you for seeing this patient.
+
+(blank line)
+Sincerely,
+(blank line)
+(blank line)
+Theresa C. Garcia MD, FAAFP, Dipl. ABOM
+NPI #1275549974
+Missouri License #2000160495
+
+==== END WITH ====
+A horizontal rule followed by "Reviewer Checklist for Dr. Garcia:" listing any [NEEDS VERIFICATION] items and assumptions.`;
+
+app.post('/api/referral', async (req, res) => {
+  if (!requireClient(res)) return;
+  const letterDate = typeof req.body?.letterDate === 'string' ? req.body.letterDate.trim() : '';
+  const patient = typeof req.body?.patient === 'string' ? req.body.patient.trim() : '';
+  const recipient = typeof req.body?.recipient === 'string' ? req.body.recipient.trim() : '';
+  const specialty = typeof req.body?.specialty === 'string' ? req.body.specialty.trim() : '';
+  const reason = typeof req.body?.reason === 'string' ? req.body.reason.trim() : '';
+  const clinicalHistory = typeof req.body?.clinicalHistory === 'string' ? req.body.clinicalHistory.trim() : '';
+  const examLabsImaging = typeof req.body?.examLabsImaging === 'string' ? req.body.examLabsImaging.trim() : '';
+  const medications = typeof req.body?.medications === 'string' ? req.body.medications.trim() : '';
+  const urgency = typeof req.body?.urgency === 'string' ? req.body.urgency.trim() : '';
+
+  if (!patient || !recipient || !reason) {
+    return res
+      .status(400)
+      .json({ error: 'Patient, recipient, and reason for referral are all required.' });
+  }
+
+  const cap = (s, n) => (s.length > n ? s.slice(0, n) + '\n…[truncated]' : s);
+  const section = (label, value, limit) =>
+    value ? `## ${label}\n${cap(value, limit)}` : '';
+
+  const userPrompt = [
+    'Draft a referral letter from Garcia Family Medicine using the case packet below. Use the established letterhead, format, and signature block.',
+    `Date of letter: ${letterDate || '[Use today]'}`,
+    section('Patient (name, DOB, MRN, contact)', patient, 400),
+    section('Recipient (specialist name, practice, address)', recipient, 500),
+    section('Specialty / focus', specialty, 200),
+    section('Reason for referral / clinical question', reason, 800),
+    section('Relevant clinical history', clinicalHistory, 2500),
+    section('Pertinent exam, labs, imaging', examLabsImaging, 2500),
+    section('Current medications and prior treatment tried', medications, 1500),
+    section('Urgency / timing', urgency, 200),
+  ]
+    .filter(Boolean)
+    .join('\n');
+
+  await streamCompletion(
+    res,
+    {
+      model: MODEL,
+      max_tokens: 4000,
+      system: REFERRAL_SYSTEM,
+      messages: [{ role: 'user', content: userPrompt }],
+    },
+    'referral',
+  );
+});
+
+// =====================================================================
+// Return-to-work / work-status letter
+// =====================================================================
+const RTW_SYSTEM = `You are a clinical documentation assistant for Theresa C. Garcia, MD, FAAFP, Dipl. ABOM of Garcia Family Medicine. You draft RETURN-TO-WORK and WORK-STATUS LETTERS for patients to give to their employer. She reviews and signs every letter.
+
+Rules:
+- Use ONLY information in the case packet. Do NOT invent diagnoses, findings, or restrictions.
+- Professional, plain language. The letter is read by HR / supervisors, not physicians — avoid jargon where possible.
+- Do NOT include diagnostic detail beyond what is medically necessary for the work-status decision. Maintain patient privacy.
+- Output the letter in this exact format:
+
+==== LETTERHEAD (centered, four lines) ====
+**GARCIA FAMILY MEDICINE**
+801 NW St. Mary's Drive, Suite 209
+Blue Springs, Missouri 64014
+Phone: 816-427-5320
+
+(blank line)
+
+[Date]
+
+(blank line)
+
+To Whom It May Concern: (OR specific addressee if provided)
+
+(blank line)
+
+RE: [Patient name], DOB [DOB]
+
+(blank line)
+
+==== BODY ====
+Paragraph 1: One sentence: "This letter confirms that [Patient name] is under my medical care."
+Paragraph 2: Work status statement. Choose ONE based on the input:
+- "[Patient] is unable to return to work from [start date] through [end date], at which time he/she will be re-evaluated."
+- "[Patient] may return to work on [date] with the following light-duty restrictions until [end date or next visit]:" followed by a bulleted list of restrictions (lifting limit, posture changes, breaks, no operation of equipment, etc.).
+- "[Patient] is released to full duty without restriction effective [date]."
+Paragraph 3 (only if restrictions are provided): A clear, scannable bulleted list of the restrictions.
+Paragraph 4: Next follow-up date and a sentence inviting the employer to contact the office with questions: "If you have any questions, please contact our office at 816-427-5320."
+
+==== CLOSING ====
+Sincerely,
+(blank line)
+(blank line)
+Theresa C. Garcia MD, FAAFP, Dipl. ABOM
+NPI #1275549974
+Missouri License #2000160495
+
+==== END WITH ====
+A horizontal rule followed by "Reviewer Checklist for Dr. Garcia:" listing any [NEEDS VERIFICATION] items.`;
+
+app.post('/api/return-to-work', async (req, res) => {
+  if (!requireClient(res)) return;
+  const letterDate = typeof req.body?.letterDate === 'string' ? req.body.letterDate.trim() : '';
+  const patient = typeof req.body?.patient === 'string' ? req.body.patient.trim() : '';
+  const employer = typeof req.body?.employer === 'string' ? req.body.employer.trim() : '';
+  const workStatus = typeof req.body?.workStatus === 'string' ? req.body.workStatus.trim() : '';
+  const effectiveDates = typeof req.body?.effectiveDates === 'string' ? req.body.effectiveDates.trim() : '';
+  const restrictions = typeof req.body?.restrictions === 'string' ? req.body.restrictions.trim() : '';
+  const reasonForLetter = typeof req.body?.reasonForLetter === 'string' ? req.body.reasonForLetter.trim() : '';
+  const followUp = typeof req.body?.followUp === 'string' ? req.body.followUp.trim() : '';
+
+  if (!patient || !workStatus) {
+    return res.status(400).json({ error: 'Patient and work status are required.' });
+  }
+
+  const cap = (s, n) => (s.length > n ? s.slice(0, n) + '\n…[truncated]' : s);
+  const section = (label, value, limit) =>
+    value ? `## ${label}\n${cap(value, limit)}` : '';
+
+  const userPrompt = [
+    'Draft a return-to-work / work-status letter from Garcia Family Medicine using the case packet below.',
+    `Date of letter: ${letterDate || '[Use today]'}`,
+    section('Patient (name, DOB)', patient, 300),
+    section('Employer / HR contact (if known)', employer, 400),
+    section('Work status (off work / light duty / full duty)', workStatus, 200),
+    section('Effective dates (start through end / next eval)', effectiveDates, 200),
+    section('Restrictions (if light duty)', restrictions, 1500),
+    section('Reason for letter / brief medical context', reasonForLetter, 800),
+    section('Next follow-up appointment', followUp, 200),
+  ]
+    .filter(Boolean)
+    .join('\n');
+
+  await streamCompletion(
+    res,
+    {
+      model: MODEL,
+      max_tokens: 3000,
+      system: RTW_SYSTEM,
+      messages: [{ role: 'user', content: userPrompt }],
+    },
+    'rtw',
+  );
+});
+
 // IME case-packet extractor. Accepts uploaded medical records (PDFs and/or
 // images of scanned records), uses Claude's PDF + vision support to read them,
 // and returns a structured JSON object populating each form field in the IME
