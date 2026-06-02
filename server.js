@@ -1163,22 +1163,30 @@ const VOICERX_API_URL =
 
 async function voicerxFetch(path) {
   if (!VOICERX_TOKEN) {
+    console.log('[voicerx] no token configured');
     return { ok: false, status: 503, json: { error: 'VoiceRx integration not configured — set VOICERX_TOKEN in .env.' } };
   }
+  const t0 = Date.now();
+  console.log('[voicerx] →', VOICERX_API_URL + path);
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15000);
+  const timeout = setTimeout(() => {
+    console.log('[voicerx] ✗ aborting after 15s timeout');
+    controller.abort();
+  }, 15000);
   try {
     const r = await fetch(VOICERX_API_URL + path, {
       headers: { Authorization: 'Bearer ' + VOICERX_TOKEN },
       signal: controller.signal,
     });
     clearTimeout(timeout);
+    console.log('[voicerx] ← status', r.status, '(' + (Date.now() - t0) + 'ms)');
     const text = await r.text();
     let parsed;
     try { parsed = JSON.parse(text); } catch { parsed = { raw: text }; }
     return { ok: r.ok, status: r.status, json: parsed };
   } catch (err) {
     clearTimeout(timeout);
+    console.log('[voicerx] ✗ error', err.name, err.message, '(' + (Date.now() - t0) + 'ms)');
     if (err.name === 'AbortError') {
       return { ok: false, status: 504, json: { error: 'VoiceRx timed out after 15 seconds. The Worker may be down or the token may be wrong.' } };
     }
@@ -1198,8 +1206,10 @@ app.get('/api/voicerx/status', requireAuth, async (_req, res) => {
   });
 });
 
-app.get('/api/voicerx/notes', requireAuth, async (_req, res) => {
+app.get('/api/voicerx/notes', requireAuth, async (req, res) => {
+  console.log('[voicerx] /api/voicerx/notes called by', req.user.email);
   const result = await voicerxFetch('/notes');
+  console.log('[voicerx] /api/voicerx/notes responding with status', result.status);
   res.status(result.status).json(result.json);
 });
 
