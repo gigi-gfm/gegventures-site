@@ -1153,6 +1153,55 @@ app.post('/api/cases/:id/timer/stop', requireAuth, (req, res) => {
   res.json(dbm.stopTimer(Number(req.params.id)) || { stoppedHours: 0 });
 });
 
+// =====================================================================
+// VoiceRx integration — proxies to the voicerx-api Worker so the IME
+// Studio can pull dictation transcripts saved by VoiceRx.
+// =====================================================================
+const VOICERX_TOKEN = process.env.VOICERX_TOKEN || '';
+const VOICERX_API_URL =
+  (process.env.VOICERX_API_URL || 'https://voicerx-api.winter-shadow-e82d.workers.dev').replace(/\/+$/, '');
+
+async function voicerxFetch(path) {
+  if (!VOICERX_TOKEN) {
+    return { ok: false, status: 503, json: { error: 'VoiceRx integration not configured — set VOICERX_TOKEN in .env.' } };
+  }
+  try {
+    const r = await fetch(VOICERX_API_URL + path, {
+      headers: { Authorization: 'Bearer ' + VOICERX_TOKEN },
+    });
+    const text = await r.text();
+    let parsed;
+    try { parsed = JSON.parse(text); } catch { parsed = { raw: text }; }
+    return { ok: r.ok, status: r.status, json: parsed };
+  } catch (err) {
+    return { ok: false, status: 502, json: { error: 'VoiceRx unreachable: ' + (err.message || err) } };
+  }
+}
+
+app.get('/api/voicerx/status', requireAuth, async (_req, res) => {
+  if (!VOICERX_TOKEN) return res.json({ configured: false });
+  const result = await voicerxFetch('/whoami');
+  res.json({
+    configured: true,
+    reachable: result.ok,
+    apiUrl: VOICERX_API_URL,
+    provider: result.ok ? result.json : null,
+    error: result.ok ? null : result.json?.error || 'unknown',
+  });
+});
+
+app.get('/api/voicerx/notes', requireAuth, async (_req, res) => {
+  const result = await voicerxFetch('/notes');
+  res.status(result.status).json(result.json);
+});
+
+app.get('/api/voicerx/notes/:id', requireAuth, async (req, res) => {
+  // Limit to safe characters — voicerx note IDs are slugs.
+  if (!/^[\w-]+$/.test(req.params.id)) return res.status(400).json({ error: 'Bad note id.' });
+  const result = await voicerxFetch('/notes/' + req.params.id);
+  res.status(result.status).json(result.json);
+});
+
 app.listen(PORT, () => {
   console.log(`Gegventures site running at http://localhost:${PORT}`);
   if (!client) {

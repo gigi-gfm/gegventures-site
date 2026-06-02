@@ -390,16 +390,38 @@ Follow-up notes…"
               ></textarea>
             </div>
             <div class="field field--today-exam">
-              <label for="physicalExam">
-                Physical examination &mdash; TODAY at the IME visit
-                <span class="field__hint">(your own exam &mdash; this goes into the Physical Exam section of the IME)</span>
-              </label>
+              <div class="exam-label-row">
+                <label for="physicalExam">
+                  Physical examination &mdash; TODAY at the IME visit
+                  <span class="field__hint">(your own exam &mdash; this goes into the Physical Exam section of the IME)</span>
+                </label>
+                <button type="button" class="btn btn--ghost btn--small" id="pullVoicerxBtn" hidden>
+                  &darr; Pull from VoiceRx
+                </button>
+              </div>
               <textarea
                 id="physicalExam"
                 name="physicalExam"
                 rows="8"
                 placeholder="Your findings at today's IME visit only. Vitals, inspection, palpation, ROM in degrees (active/passive), strength by MRC grade, neuro (sensory, reflexes, motor), special tests (Spurling, Hawkins, Lachman, McMurray, SLR, etc.), gait, atrophy measurements. Do not paste prior providers' exams here — those go in the field above."
               ></textarea>
+            </div>
+
+            <!-- VoiceRx transcript picker modal -->
+            <div class="voicerx-modal" id="voicerxModal" hidden>
+              <div class="voicerx-modal__backdrop" id="voicerxBackdrop"></div>
+              <div class="voicerx-modal__card">
+                <div class="voicerx-modal__head">
+                  <div>
+                    <h3 class="voicerx-modal__title">Pull a transcript from VoiceRx</h3>
+                    <p class="voicerx-modal__sub" id="voicerxModalSub">Click a transcript to drop it into the Physical Exam field.</p>
+                  </div>
+                  <button type="button" class="voicerx-modal__close" id="voicerxClose" aria-label="Close">&times;</button>
+                </div>
+                <div class="voicerx-modal__list" id="voicerxList">
+                  <p class="voicerx-modal__empty">Loading recent transcripts…</p>
+                </div>
+              </div>
             </div>
             <div class="field">
               <label for="diagnostics">Diagnostic studies <span class="field__hint">(imaging, EMG/NCS, labs &mdash; as reported)</span></label>

@@ -830,6 +830,123 @@
     letterDateInput.value = months[today.getMonth()] + ' ' + today.getDate() + ', ' + today.getFullYear();
   }
 
+  // -------- VoiceRx integration --------
+  (function setupVoicerx() {
+    var pullBtn = document.getElementById('pullVoicerxBtn');
+    var modal = document.getElementById('voicerxModal');
+    var backdrop = document.getElementById('voicerxBackdrop');
+    var closeBtn = document.getElementById('voicerxClose');
+    var listEl = document.getElementById('voicerxList');
+    var subEl = document.getElementById('voicerxModalSub');
+    var examEl = document.getElementById('physicalExam');
+    if (!pullBtn || !modal || !examEl) return;
+
+    // Show the button only when the integration is configured.
+    fetch('/api/voicerx/status').then(function (r) { return r.json(); }).then(function (s) {
+      if (s && s.configured) pullBtn.hidden = false;
+    }).catch(function () { /* silent */ });
+
+    function openModal() {
+      modal.hidden = false;
+      listEl.innerHTML = '<p class="voicerx-modal__empty">Loading recent transcripts…</p>';
+      subEl.textContent = 'Click a transcript to drop it into the Physical Exam field.';
+      fetch('/api/voicerx/notes')
+        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+        .then(function (res) {
+          if (!res.ok) {
+            listEl.innerHTML = '<p class="voicerx-modal__empty">Could not load: ' + (res.data && res.data.error || 'unknown error') + '</p>';
+            return;
+          }
+          renderList(res.data.notes || []);
+        })
+        .catch(function (err) {
+          listEl.innerHTML = '<p class="voicerx-modal__empty">Could not load: ' + (err.message || err) + '</p>';
+        });
+    }
+    function closeModal() { modal.hidden = true; }
+
+    function vEscapeHtml(s) {
+      return String(s || '').replace(/[<>&"]/g, function (ch) {
+        return { '<':'&lt;', '>':'&gt;', '&':'&amp;', '"':'&quot;' }[ch];
+      });
+    }
+    function shorten(s, n) {
+      var t = String(s || '').replace(/\s+/g, ' ').trim();
+      return t.length > n ? t.slice(0, n) + '…' : t;
+    }
+    function fmtVisitDate(d) {
+      if (!d) return 'No date';
+      var dt = /^\d{4}-\d{2}-\d{2}$/.test(d)
+        ? new Date(d + 'T12:00:00')
+        : new Date(Number(d) || d);
+      if (isNaN(dt.getTime())) return d;
+      var m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return m[dt.getMonth()] + ' ' + dt.getDate() + ', ' + dt.getFullYear();
+    }
+
+    function renderList(notes) {
+      if (!notes.length) {
+        listEl.innerHTML = '<p class="voicerx-modal__empty">No transcripts found in VoiceRx for this provider.</p>';
+        return;
+      }
+      listEl.innerHTML = '';
+      notes.forEach(function (n) {
+        var row = document.createElement('div');
+        row.className = 'voicerx-row';
+        row.innerHTML =
+          '<div class="voicerx-row__main">' +
+            '<div class="voicerx-row__patient">' + vEscapeHtml(n.patient_name || 'Unknown patient') + '</div>' +
+            '<div class="voicerx-row__meta">' +
+              fmtVisitDate(n.visit_date) +
+              (n.note_type ? ' &middot; ' + vEscapeHtml(n.note_type) : '') +
+              (n.lang && n.lang !== 'en' ? ' &middot; ' + vEscapeHtml(n.lang) : '') +
+            '</div>' +
+            '<div class="voicerx-row__preview">' + vEscapeHtml(shorten(n.transcript_en || n.transcript || n.soap || '', 220)) + '</div>' +
+          '</div>' +
+          '<button type="button" class="voicerx-row__pick">Use this</button>';
+        row.addEventListener('click', function () { useNote(n.id); });
+        listEl.appendChild(row);
+      });
+    }
+
+    async function useNote(id) {
+      subEl.textContent = 'Fetching transcript…';
+      try {
+        var res = await fetch('/api/voicerx/notes/' + encodeURIComponent(id));
+        var data = await res.json();
+        if (!res.ok) {
+          subEl.textContent = 'Could not load transcript: ' + (data.error || 'unknown error');
+          return;
+        }
+        var note = data.note || data;
+        // Prefer English transcript; fall back to raw transcript, then SOAP.
+        var text = note.transcript_en || note.transcript || note.soap || '';
+        if (!text.trim()) {
+          subEl.textContent = 'That transcript was empty.';
+          return;
+        }
+        if (examEl.value && examEl.value.trim()) {
+          if (!confirm('The Physical Exam field already has content. Replace it with this transcript?')) return;
+        }
+        examEl.value = text;
+        // Trigger autosave.
+        examEl.dispatchEvent(new Event('input', { bubbles: true }));
+        closeModal();
+        examEl.focus();
+        examEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } catch (e) {
+        subEl.textContent = 'Could not load transcript: ' + (e.message || e);
+      }
+    }
+
+    pullBtn.addEventListener('click', openModal);
+    closeBtn.addEventListener('click', closeModal);
+    backdrop.addEventListener('click', closeModal);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !modal.hidden) closeModal();
+    });
+  })();
+
   // Boot: if no case ID, send the user to the dashboard to pick one.
   if (!caseId) {
     window.location.href = '/cases.html';
