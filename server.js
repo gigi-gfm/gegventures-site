@@ -1,8 +1,10 @@
 import 'dotenv/config';
 import express from 'express';
+import cookieParser from 'cookie-parser';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import Anthropic from '@anthropic-ai/sdk';
+import * as dbm from './db.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -10,13 +12,103 @@ const PORT = process.env.PORT || 3000;
 const MODEL = 'claude-opus-4-7';
 
 app.use(express.json({ limit: '400mb' }));
+app.use(cookieParser());
 
 // Keep server internals out of the public static handler.
-const BLOCKED = [/^\/node_modules\//, /^\/server\.js$/, /^\/package(-lock)?\.json$/, /^\/\./];
+const BLOCKED = [
+  /^\/node_modules\//,
+  /^\/server\.js$/,
+  /^\/db\.js$/,
+  /^\/data\//,
+  /^\/package(-lock)?\.json$/,
+  /^\/\./,
+];
 app.use((req, res, next) => {
   if (BLOCKED.some((re) => re.test(req.path))) return res.status(404).send('Not found');
   next();
 });
+
+// -------- Auth --------
+dbm.bootstrapAdmin();
+dbm.purgeExpiredSessions();
+setInterval(() => dbm.purgeExpiredSessions(), 60 * 60 * 1000).unref();
+
+const SESSION_COOKIE = 'geg_session';
+const COOKIE_OPTS = {
+  httpOnly: true,
+  sameSite: 'lax',
+  secure: false, // Cloudflare Tunnel terminates TLS; cookies flow over the tunnel.
+  path: '/',
+  maxAge: 30 * 24 * 60 * 60 * 1000,
+};
+
+function currentUser(req) {
+  return dbm.getSessionUser(req.cookies?.[SESSION_COOKIE]);
+}
+function requireAuth(req, res, next) {
+  const user = currentUser(req);
+  if (!user) return res.status(401).json({ error: 'Not signed in.' });
+  req.user = user;
+  next();
+}
+function requireAdmin(req, res, next) {
+  requireAuth(req, res, () => {
+    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only.' });
+    next();
+  });
+}
+
+// Pages that don't require auth.
+const PUBLIC_PAGES = new Set([
+  '/login.html',
+  '/login',
+  '/api/auth/login',
+  '/api/auth/me',
+  '/api/auth/logout',
+  '/api/status',
+  '/favicon.ico',
+  // The original marketing site is still public:
+  '/index.html',
+  '/',
+  '/about.html',
+  '/services.html',
+  '/contact.html',
+  '/studio.html',
+  '/garcia-family-medicine.html',
+]);
+const PUBLIC_PREFIXES = ['/css/', '/js/', '/fonts/'];
+
+// Protected pages — anything under these paths requires a login.
+const PROTECTED_HTML = new Set([
+  '/ime-studio.html',
+  '/referral.html',
+  '/return-to-work.html',
+  '/cases.html',
+  '/users.html',
+]);
+const PROTECTED_API_PREFIX = '/api/';
+const PROTECTED_API_EXCEPTIONS = new Set([
+  '/api/auth/login',
+  '/api/auth/me',
+  '/api/auth/logout',
+  '/api/status',
+]);
+
+// Gate HTML pages: redirect unauthenticated requests to /login.html.
+app.use((req, res, next) => {
+  const p = req.path;
+  if (PROTECTED_HTML.has(p)) {
+    if (!currentUser(req)) {
+      return res.redirect('/login.html?next=' + encodeURIComponent(p));
+    }
+  }
+  // Gate API: anything under /api/ that isn't an exception requires login.
+  if (p.startsWith(PROTECTED_API_PREFIX) && !PROTECTED_API_EXCEPTIONS.has(p)) {
+    if (!currentUser(req)) return res.status(401).json({ error: 'Not signed in.' });
+  }
+  next();
+});
+
 app.use(express.static(__dirname, { extensions: ['html'], dotfiles: 'ignore' }));
 
 const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -900,6 +992,136 @@ app.post('/api/generate', async (req, res) => {
     },
     'generate',
   );
+});
+
+// =====================================================================
+// Authentication endpoints
+// =====================================================================
+app.post('/api/auth/login', (req, res) => {
+  const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+  const password = typeof req.body?.password === 'string' ? req.body.password : '';
+  if (!email || !password) return res.status(400).json({ error: 'Email and password are required.' });
+  const user = dbm.verifyUserPassword(email, password);
+  if (!user) return res.status(401).json({ error: 'Incorrect email or password.' });
+  const { token } = dbm.createSession(user.id);
+  res.cookie(SESSION_COOKIE, token, COOKIE_OPTS);
+  res.json({ user });
+});
+
+app.post('/api/auth/logout', (req, res) => {
+  const token = req.cookies?.[SESSION_COOKIE];
+  if (token) dbm.deleteSession(token);
+  res.clearCookie(SESSION_COOKIE, COOKIE_OPTS);
+  res.json({ ok: true });
+});
+
+app.get('/api/auth/me', (req, res) => {
+  const user = currentUser(req);
+  if (!user) return res.json({ user: null });
+  res.json({ user });
+});
+
+// =====================================================================
+// User management (admin only)
+// =====================================================================
+app.get('/api/users', requireAdmin, (_req, res) => {
+  res.json({ users: dbm.listUsers() });
+});
+
+app.post('/api/users', requireAdmin, (req, res) => {
+  const { email, password, name, role } = req.body || {};
+  try {
+    const user = dbm.createUser({ email, password, name, role });
+    res.json({ user });
+  } catch (err) {
+    res.status(400).json({ error: err.message || 'Could not create user.' });
+  }
+});
+
+app.delete('/api/users/:id', requireAdmin, (req, res) => {
+  const id = Number(req.params.id);
+  if (id === req.user.id) return res.status(400).json({ error: 'Cannot delete your own account.' });
+  dbm.deleteUser(id);
+  res.json({ ok: true });
+});
+
+// =====================================================================
+// Cases — list, create, read, update, archive
+// =====================================================================
+app.get('/api/cases', requireAuth, (req, res) => {
+  const includeArchived = req.query.archived === '1';
+  res.json({ cases: dbm.listCases({ includeArchived }) });
+});
+
+app.post('/api/cases', requireAuth, (req, res) => {
+  const label = (req.body?.label || '').trim();
+  const c = dbm.createCase({ label, userId: req.user.id });
+  res.json({ case: c });
+});
+
+app.get('/api/cases/:id', requireAuth, (req, res) => {
+  const c = dbm.getCase(Number(req.params.id));
+  if (!c) return res.status(404).json({ error: 'Case not found.' });
+  const entries = dbm.listEntries(c.id);
+  const timer = dbm.getTimer(c.id);
+  res.json({ case: c, entries, timer });
+});
+
+app.patch('/api/cases/:id', requireAuth, (req, res) => {
+  const id = Number(req.params.id);
+  const allowed = [
+    'label', 'data', 'imeDraft',
+    'retainerDate', 'recordsDate', 'examDate', 'softDeadline', 'hardDeadline',
+    'archived',
+  ];
+  const patch = {};
+  for (const k of allowed) {
+    if (req.body && Object.prototype.hasOwnProperty.call(req.body, k)) patch[k] = req.body[k];
+  }
+  const updated = dbm.updateCase(id, patch);
+  if (!updated) return res.status(404).json({ error: 'Case not found.' });
+  res.json({ case: updated });
+});
+
+app.delete('/api/cases/:id', requireAuth, (req, res) => {
+  // Soft delete — flip archived flag. Use ?hard=1 to actually delete.
+  const id = Number(req.params.id);
+  if (req.query.hard === '1' && req.user.role === 'admin') {
+    dbm.deleteCase(id);
+  } else {
+    dbm.updateCase(id, { archived: true });
+  }
+  res.json({ ok: true });
+});
+
+// Time entries
+app.get('/api/cases/:id/entries', requireAuth, (req, res) => {
+  res.json({ entries: dbm.listEntries(Number(req.params.id)) });
+});
+app.post('/api/cases/:id/entries', requireAuth, (req, res) => {
+  try {
+    const result = dbm.addEntry(Number(req.params.id), {
+      entryDate: req.body?.entryDate,
+      activity: req.body?.activity,
+      hours: Number(req.body?.hours),
+      userId: req.user.id,
+    });
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+app.delete('/api/cases/:caseId/entries/:entryId', requireAuth, (req, res) => {
+  dbm.deleteEntry(Number(req.params.caseId), Number(req.params.entryId));
+  res.json({ ok: true });
+});
+
+// Live timer
+app.post('/api/cases/:id/timer/start', requireAuth, (req, res) => {
+  res.json({ timer: dbm.startTimer(Number(req.params.id), req.user.id) });
+});
+app.post('/api/cases/:id/timer/stop', requireAuth, (req, res) => {
+  res.json(dbm.stopTimer(Number(req.params.id)) || { stoppedHours: 0 });
 });
 
 app.listen(PORT, () => {

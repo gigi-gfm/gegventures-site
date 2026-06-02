@@ -430,6 +430,7 @@
     var balanceEl = document.getElementById('trackerBalance');
     var retainerDateEl = document.getElementById('trackerRetainerDate');
     var recordsDateEl = document.getElementById('trackerRecordsDate');
+    var examDateEl = document.getElementById('trackerExamDate');
     var softEl = document.getElementById('trackerSoftDeadline');
     var hardEl = document.getElementById('trackerHardDeadline');
     var statusEl = document.getElementById('trackerDeadlineStatus');
@@ -503,6 +504,7 @@
           startedAt: 0,
           retainerDate: '',
           recordsDate: '',
+          examDate: '',
           softDeadline: '',
           hardDeadline: '',
         };
@@ -511,6 +513,7 @@
       // Migrate older records that pre-date the date fields
       if (typeof c.retainerDate !== 'string') c.retainerDate = '';
       if (typeof c.recordsDate !== 'string') c.recordsDate = '';
+      if (typeof c.examDate !== 'string') c.examDate = '';
       if (typeof c.softDeadline !== 'string') c.softDeadline = '';
       if (typeof c.hardDeadline !== 'string') c.hardDeadline = '';
       return c;
@@ -542,6 +545,9 @@
       }
       if (recordsDateEl && document.activeElement !== recordsDateEl) {
         recordsDateEl.value = c.recordsDate || '';
+      }
+      if (examDateEl && document.activeElement !== examDateEl) {
+        examDateEl.value = c.examDate || '';
       }
       if (softEl && document.activeElement !== softEl) {
         softEl.value = c.softDeadline || '';
@@ -709,14 +715,33 @@
     if (recordsDateEl) {
       recordsDateEl.addEventListener('change', function () {
         var store = loadStore();
+        getCase(store).recordsDate = recordsDateEl.value;
+        saveStore(store);
+        render();
+      });
+    }
+
+    if (examDateEl) {
+      examDateEl.addEventListener('change', function () {
+        var store = loadStore();
         var c = getCase(store);
-        c.recordsDate = recordsDateEl.value;
-        // Auto-fill the deadlines if they're empty.
-        if (c.recordsDate) {
-          if (!c.softDeadline) c.softDeadline = addBusinessDays(c.recordsDate, 7);
-          if (!c.hardDeadline) c.hardDeadline = addBusinessDays(c.recordsDate, 10);
+        c.examDate = examDateEl.value;
+        // Auto-fill deadlines from exam date. Always recalc when exam date
+        // changes (this is the trigger Dr. Garcia uses for turnaround).
+        if (c.examDate) {
+          c.softDeadline = addBusinessDays(c.examDate, 7);
+          c.hardDeadline = addBusinessDays(c.examDate, 10);
         }
         saveStore(store);
+        // Mirror into the IME form's "Date of physical examination" field
+        // so the drafted IME shows the right date in the Physical Exam header.
+        var formExamDate = document.getElementById('dateOfEval');
+        if (formExamDate && c.examDate) {
+          var parts = c.examDate.split('-');
+          var d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+          var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+          formExamDate.value = months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+        }
         render();
       });
     }

@@ -79,6 +79,18 @@ p { color: var(--ink-soft); }
 .btn--outline-light { background: transparent; color: #fff; border-color: rgba(255,255,255,0.5); }
 .btn--outline-light:hover { border-color: #fff; }
 
+.user-chip {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 6px 12px;
+  background: var(--bg-warm);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.86rem;
+  color: var(--ink);
+}
+.user-chip a { color: var(--accent-dark); margin-left: 6px; font-weight: 700; }
+.user-chip a:hover { text-decoration: underline; }
+
 /* Header */
 .site-header {
   position: sticky;

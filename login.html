@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign in | Garcia Family Medicine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .login-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: var(--bg-warm);
+    }
+    .login-card {
+      width: 100%;
+      max-width: 420px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 36px 32px;
+      box-shadow: var(--shadow);
+    }
+    .login-card h1 { font-size: 1.5rem; margin-bottom: 4px; }
+    .login-card .sub { color: var(--ink-soft); font-size: 0.95rem; margin-bottom: 24px; }
+    .login-card label {
+      display: block; font-weight: 700; font-size: 0.88rem;
+      margin: 14px 0 6px; color: var(--ink);
+    }
+    .login-card input {
+      width: 100%; padding: 11px 12px;
+      border: 1px solid var(--line); border-radius: 8px;
+      font: inherit;
+    }
+    .login-card input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+    .login-card button { width: 100%; margin-top: 18px; }
+    .login-err {
+      color: #b91c1c; font-size: 0.9rem; min-height: 1.2em; margin-top: 10px;
+    }
+    .login-foot { font-size: 0.82rem; color: var(--ink-soft); margin-top: 22px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="login-wrap">
+    <form class="login-card" id="loginForm">
+      <h1>Garcia Family Medicine</h1>
+      <p class="sub">Sign in to the IME &amp; clinic studio.</p>
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" autocomplete="username" required />
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required />
+      <button type="submit" class="btn btn--primary" id="loginBtn">Sign in</button>
+      <p class="login-err" id="loginErr" role="status"></p>
+      <p class="login-foot">No account yet? Ask your admin to add you.</p>
+    </form>
+  </div>
+  <script>
+    (function () {
+      var form = document.getElementById('loginForm');
+      var err = document.getElementById('loginErr');
+      var btn = document.getElementById('loginBtn');
+      form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        err.textContent = '';
+        btn.disabled = true; btn.textContent = 'Signing in…';
+        try {
+          var res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: form.email.value.trim(),
+              password: form.password.value,
+            }),
+          });
+          var data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Sign-in failed.');
+          var params = new URLSearchParams(window.location.search);
+          var next = params.get('next') || '/cases.html';
+          window.location.href = next;
+        } catch (e) {
+          err.textContent = e.message;
+          btn.disabled = false; btn.textContent = 'Sign in';
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

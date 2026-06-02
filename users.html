@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Users | Garcia Family Medicine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/ime.css" />
+  <style>
+    .users-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: start; }
+    @media (max-width: 900px) { .users-grid { grid-template-columns: 1fr; } }
+    .users-card {
+      background: #fff; border: 1px solid var(--line); border-radius: var(--radius);
+      padding: 24px;
+    }
+    .users-list { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+    .users-list th, .users-list td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+    .users-list th { background: var(--bg-warm); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+    .users-list button { background: none; border: none; color: var(--accent-dark); font-weight: 700; cursor: pointer; }
+    .users-list .role-admin { color: var(--accent-dark); font-weight: 700; }
+    .user-chip {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 6px 10px; background: var(--bg-warm); border: 1px solid var(--line);
+      border-radius: 999px; font-size: 0.86rem;
+    }
+    .user-chip a { color: var(--accent-dark); margin-left: 6px; font-weight: 600; }
+    .add-user-form .field { margin-bottom: 14px; }
+    .add-user-form label { display: block; font-weight: 700; font-size: 0.88rem; margin-bottom: 6px; }
+    .add-user-form input, .add-user-form select {
+      width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; font: inherit;
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="index.html"><span class="brand__mark">G</span> Gegventures</a>
+      <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <nav class="nav">
+        <a href="cases.html">Cases</a>
+        <a href="ime-studio.html">IME Studio</a>
+        <a href="referral.html">Referrals</a>
+        <a href="return-to-work.html">RTW</a>
+        <a href="users.html" id="usersLink" class="is-active">Users</a>
+        <span class="user-chip" id="userChip" hidden>
+          <span id="userName"></span> <a href="#" id="logoutLink">Sign out</a>
+        </span>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="section">
+      <div class="wrap">
+        <h1 style="margin-bottom: 18px;">Users</h1>
+        <p style="color: var(--ink-soft); margin-bottom: 22px;">
+          Only admins can add or remove users. Anyone with an account has full access to every case.
+        </p>
+        <div class="users-grid">
+          <div class="users-card">
+            <h3 style="margin-bottom: 14px;">All users</h3>
+            <table class="users-list">
+              <thead><tr><th>Name</th><th>Email</th><th>Role</th><th></th></tr></thead>
+              <tbody id="usersBody"></tbody>
+            </table>
+          </div>
+          <div class="users-card">
+            <h3 style="margin-bottom: 14px;">Add a user</h3>
+            <form class="add-user-form" id="addUserForm">
+              <div class="field"><label for="newName">Name</label><input id="newName" required /></div>
+              <div class="field"><label for="newEmail">Email</label><input id="newEmail" type="email" required /></div>
+              <div class="field"><label for="newPassword">Temporary password</label><input id="newPassword" type="text" minlength="8" required /></div>
+              <div class="field">
+                <label for="newRole">Role</label>
+                <select id="newRole"><option value="user">User</option><option value="admin">Admin</option></select>
+              </div>
+              <button type="submit" class="btn btn--primary">Create user</button>
+              <p class="form-note" id="addStatus" role="status" style="margin-top: 10px; min-height: 1.2em;"></p>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/main.js"></script>
+  <script src="js/user-chip.js"></script>
+  <script>
+  (function () {
+    var body = document.getElementById('usersBody');
+    var form = document.getElementById('addUserForm');
+    var status = document.getElementById('addStatus');
+
+    async function loadUsers() {
+      var res = await fetch('/api/users');
+      if (!res.ok) {
+        if (res.status === 403) {
+          document.querySelector('main').innerHTML = '<section class="section"><div class="wrap"><h1>Admins only</h1><p>You don’t have permission to manage users.</p></div></section>';
+        }
+        return;
+      }
+      var data = await res.json();
+      body.innerHTML = '';
+      (data.users || []).forEach(function (u) {
+        var tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td>' + escapeHtml(u.name) + '</td>' +
+          '<td>' + escapeHtml(u.email) + '</td>' +
+          '<td class="' + (u.role === 'admin' ? 'role-admin' : '') + '">' + u.role + '</td>' +
+          '<td><button data-delete="' + u.id + '">Remove</button></td>';
+        body.appendChild(tr);
+      });
+      body.querySelectorAll('button[data-delete]').forEach(function (btn) {
+        btn.addEventListener('click', async function () {
+          if (!confirm('Remove this user? They will be signed out.')) return;
+          var id = btn.getAttribute('data-delete');
+          var res = await fetch('/api/users/' + id, { method: 'DELETE' });
+          if (!res.ok) {
+            var data = await res.json().catch(function () { return {}; });
+            return alert(data.error || 'Could not remove user.');
+          }
+          loadUsers();
+        });
+      });
+    }
+    function escapeHtml(s) {
+      return String(s || '').replace(/[<>&"]/g, function (ch) {
+        return { '<':'&lt;', '>':'&gt;', '&':'&amp;', '"':'&quot;' }[ch];
+      });
+    }
+
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      status.textContent = '';
+      var res = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: document.getElementById('newName').value.trim(),
+          email: document.getElementById('newEmail').value.trim(),
+          password: document.getElementById('newPassword').value,
+          role: document.getElementById('newRole').value,
+        }),
+      });
+      var data = await res.json();
+      if (!res.ok) {
+        status.textContent = data.error || 'Could not create user.';
+        return;
+      }
+      status.textContent = 'User created. Share their email and password with them.';
+      form.reset();
+      loadUsers();
+    });
+
+    loadUsers();
+  })();
+  </script>
+</body>
+</html>

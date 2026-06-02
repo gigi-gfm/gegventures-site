@@ -19,15 +19,14 @@
         <span></span><span></span><span></span>
       </button>
       <nav class="nav">
-        <a href="index.html">Home</a>
-        <a href="services.html">Services</a>
-        <a href="about.html">About</a>
-        <a href="studio.html">AI Studio</a>
+        <a href="cases.html">Cases</a>
         <a href="ime-studio.html" class="is-active">IME Studio</a>
         <a href="referral.html">Referrals</a>
         <a href="return-to-work.html">RTW</a>
-        <a href="contact.html">Contact</a>
-        <a href="contact.html" class="btn btn--primary">Free Consultation</a>
+        <a href="users.html" id="usersLink" hidden>Users</a>
+        <span class="user-chip" id="userChip" hidden>
+          <span id="userName"></span> <a href="#" id="logoutLink">Sign out</a>
+        </span>
       </nav>
     </div>
   </header>
@@ -118,16 +117,20 @@
               <input id="trackerRecordsDate" type="date" />
             </div>
             <div class="ime-tracker__date">
+              <label for="trackerExamDate">Physical exam</label>
+              <input id="trackerExamDate" type="date" />
+            </div>
+            <div class="ime-tracker__date">
               <label for="trackerSoftDeadline">
                 Soft deadline
-                <span class="ime-tracker__date-hint">(+7 business days)</span>
+                <span class="ime-tracker__date-hint">(exam + 7 bus. days)</span>
               </label>
               <input id="trackerSoftDeadline" type="date" />
             </div>
             <div class="ime-tracker__date">
               <label for="trackerHardDeadline">
                 Hard deadline
-                <span class="ime-tracker__date-hint">(+10 business days)</span>
+                <span class="ime-tracker__date-hint">(exam + 10 bus. days)</span>
               </label>
               <input id="trackerHardDeadline" type="date" />
             </div>
@@ -546,6 +549,7 @@ EMG/NCS RUE 06/01/2024 — moderate carpal tunnel right…"
   </footer>
 
   <script src="js/main.js"></script>
+  <script src="js/user-chip.js"></script>
   <script src="js/ai.js"></script>
   <script src="js/ime.js"></script>
 </body>

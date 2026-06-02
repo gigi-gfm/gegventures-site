@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cases | Garcia Family Medicine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/ime.css" />
+  <style>
+    .cases-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap; margin-bottom: 18px;
+    }
+    .cases-bar h1 { margin: 0; font-size: 1.7rem; }
+    .case-new-form { display: flex; gap: 8px; }
+    .case-new-form input {
+      padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; font: inherit; min-width: 260px;
+    }
+    .cases-table {
+      width: 100%; border-collapse: collapse;
+      background: #fff; border: 1px solid var(--line); border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .cases-table th, .cases-table td {
+      text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--line);
+      font-size: 0.92rem;
+    }
+    .cases-table th {
+      background: var(--bg-warm); color: var(--ink-soft);
+      font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase;
+    }
+    .cases-table tr:last-child td { border-bottom: none; }
+    .cases-table a { color: var(--accent-dark); font-weight: 700; }
+    .cases-deadline-pill {
+      display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.78rem; font-weight: 700;
+    }
+    .pill-ok { background: var(--accent-soft); color: var(--accent-dark); }
+    .pill-warn { background: #fff8e1; color: #744210; }
+    .pill-overdue { background: #fde8e8; color: #742a2a; }
+    .cases-empty { padding: 36px 16px; text-align: center; color: var(--ink-soft); }
+    .user-chip {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 6px 10px; background: var(--bg-warm); border: 1px solid var(--line);
+      border-radius: 999px; font-size: 0.86rem;
+    }
+    .user-chip a { color: var(--accent-dark); margin-left: 6px; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="index.html"><span class="brand__mark">G</span> Gegventures</a>
+      <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <nav class="nav">
+        <a href="cases.html" class="is-active">Cases</a>
+        <a href="ime-studio.html">IME Studio</a>
+        <a href="referral.html">Referrals</a>
+        <a href="return-to-work.html">RTW</a>
+        <a href="users.html" id="usersLink" hidden>Users</a>
+        <span class="user-chip" id="userChip" hidden>
+          <span id="userName"></span> <a href="#" id="logoutLink">Sign out</a>
+        </span>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="section">
+      <div class="wrap">
+        <div class="cases-bar">
+          <h1>Cases</h1>
+          <form class="case-new-form" id="newCaseForm">
+            <input id="newCaseLabel" type="text" placeholder="New case label (e.g. Mendez 22-079328)" required />
+            <button type="submit" class="btn btn--primary">Create case</button>
+          </form>
+        </div>
+
+        <table class="cases-table">
+          <thead>
+            <tr>
+              <th>Label</th>
+              <th>Records received</th>
+              <th>Hard deadline</th>
+              <th>Status</th>
+              <th>Created by</th>
+              <th>Updated</th>
+            </tr>
+          </thead>
+          <tbody id="caseRows"></tbody>
+        </table>
+        <div class="cases-empty" id="casesEmpty" hidden>
+          No cases yet. Create one above to get started.
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/main.js"></script>
+  <script src="js/user-chip.js"></script>
+  <script>
+  (function () {
+    var tbody = document.getElementById('caseRows');
+    var empty = document.getElementById('casesEmpty');
+    var form = document.getElementById('newCaseForm');
+    var label = document.getElementById('newCaseLabel');
+
+    function todayISO() {
+      var d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    }
+    function daysBetween(a, b) {
+      if (!a || !b) return null;
+      return Math.round((new Date(b + 'T12:00:00') - new Date(a + 'T12:00:00')) / 86400000);
+    }
+    function fmtDate(iso) {
+      if (!iso) return '—';
+      var p = iso.split('-');
+      var d = new Date(Number(p[0]), Number(p[1])-1, Number(p[2]));
+      return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+    }
+    function deadlinePill(softIso, hardIso) {
+      if (!hardIso) return '';
+      var dh = daysBetween(todayISO(), hardIso);
+      var ds = softIso ? daysBetween(todayISO(), softIso) : null;
+      if (dh < 0) return '<span class="cases-deadline-pill pill-overdue">Overdue ' + Math.abs(dh) + 'd</span>';
+      if (dh === 0) return '<span class="cases-deadline-pill pill-overdue">Due today</span>';
+      if (ds !== null && ds < 0) return '<span class="cases-deadline-pill pill-warn">' + dh + 'd to hard</span>';
+      if (ds !== null) return '<span class="cases-deadline-pill pill-ok">' + ds + 'd to soft</span>';
+      return '<span class="cases-deadline-pill pill-ok">' + dh + 'd to hard</span>';
+    }
+    function fmtUpdated(iso) {
+      if (!iso) return '';
+      var d = new Date(iso.replace(' ', 'T') + 'Z');
+      var now = new Date();
+      var diff = Math.round((now - d) / 60000);
+      if (diff < 1) return 'just now';
+      if (diff < 60) return diff + 'm ago';
+      if (diff < 1440) return Math.round(diff / 60) + 'h ago';
+      return Math.round(diff / 1440) + 'd ago';
+    }
+
+    async function loadCases() {
+      var res = await fetch('/api/cases');
+      if (!res.ok) {
+        if (res.status === 401) window.location.href = '/login.html';
+        return;
+      }
+      var data = await res.json();
+      var cases = data.cases || [];
+      tbody.innerHTML = '';
+      if (cases.length === 0) {
+        empty.hidden = false;
+        return;
+      }
+      empty.hidden = true;
+      cases.forEach(function (c) {
+        var tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td><a href="ime-studio.html?case=' + c.id + '">' + escapeHtml(c.label) + '</a></td>' +
+          '<td>' + fmtDate(c.recordsDate) + '</td>' +
+          '<td>' + fmtDate(c.hardDeadline) + '</td>' +
+          '<td>' + deadlinePill(c.softDeadline, c.hardDeadline) + '</td>' +
+          '<td>' + escapeHtml(c.createdByName || '') + '</td>' +
+          '<td>' + fmtUpdated(c.updatedAt) + '</td>';
+        tbody.appendChild(tr);
+      });
+    }
+    function escapeHtml(s) {
+      return String(s || '').replace(/[<>&"]/g, function (ch) {
+        return { '<':'&lt;', '>':'&gt;', '&':'&amp;', '"':'&quot;' }[ch];
+      });
+    }
+
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      var l = label.value.trim();
+      if (!l) return;
+      var res = await fetch('/api/cases', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ label: l }),
+      });
+      if (!res.ok) return alert('Could not create case.');
+      var data = await res.json();
+      window.location.href = 'ime-studio.html?case=' + data.case.id;
+    });
+
+    loadCases();
+  })();
+  </script>
+</body>
+</html>
