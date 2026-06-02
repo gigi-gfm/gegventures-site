@@ -1165,15 +1165,23 @@ async function voicerxFetch(path) {
   if (!VOICERX_TOKEN) {
     return { ok: false, status: 503, json: { error: 'VoiceRx integration not configured — set VOICERX_TOKEN in .env.' } };
   }
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
   try {
     const r = await fetch(VOICERX_API_URL + path, {
       headers: { Authorization: 'Bearer ' + VOICERX_TOKEN },
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
     const text = await r.text();
     let parsed;
     try { parsed = JSON.parse(text); } catch { parsed = { raw: text }; }
     return { ok: r.ok, status: r.status, json: parsed };
   } catch (err) {
+    clearTimeout(timeout);
+    if (err.name === 'AbortError') {
+      return { ok: false, status: 504, json: { error: 'VoiceRx timed out after 15 seconds. The Worker may be down or the token may be wrong.' } };
+    }
     return { ok: false, status: 502, json: { error: 'VoiceRx unreachable: ' + (err.message || err) } };
   }
 }

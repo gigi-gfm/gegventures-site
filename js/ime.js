@@ -850,9 +850,14 @@
       modal.hidden = false;
       listEl.innerHTML = '<p class="voicerx-modal__empty">Loading recent transcripts…</p>';
       subEl.textContent = 'Click a transcript to drop it into the Physical Exam field.';
-      fetch('/api/voicerx/notes')
+      // Client-side timeout of 20s — slightly longer than the server's 15s
+      // so server errors surface with their real message rather than client abort.
+      var ctrl = new AbortController();
+      var t = setTimeout(function () { ctrl.abort(); }, 20000);
+      fetch('/api/voicerx/notes', { signal: ctrl.signal })
         .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
         .then(function (res) {
+          clearTimeout(t);
           if (!res.ok) {
             listEl.innerHTML = '<p class="voicerx-modal__empty">Could not load: ' + (res.data && res.data.error || 'unknown error') + '</p>';
             return;
@@ -860,7 +865,11 @@
           renderList(res.data.notes || []);
         })
         .catch(function (err) {
-          listEl.innerHTML = '<p class="voicerx-modal__empty">Could not load: ' + (err.message || err) + '</p>';
+          clearTimeout(t);
+          var msg = err.name === 'AbortError'
+            ? 'Request timed out after 20 seconds. Check the server log and verify VOICERX_TOKEN.'
+            : 'Could not load: ' + (err.message || err);
+          listEl.innerHTML = '<p class="voicerx-modal__empty">' + msg + '</p>';
         });
     }
     function closeModal() { modal.hidden = true; }
