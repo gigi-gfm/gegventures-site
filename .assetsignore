@@ -1,0 +1,40 @@
+# Files in the repo root that Cloudflare Workers should NOT upload as
+# static assets. Anything not listed here gets served by the Worker.
+#
+# This is wrangler's static-assets ignore file — gitignore-style syntax.
+
+# Worker source + tooling (not customer-facing static)
+workers/
+node_modules/
+
+# Local SQLite database (for the Node dev path) — never deploy
+data/
+
+# Build / log / VC noise
+.git/
+.github/
+.claude/
+.wrangler/
+*.log
+
+# Local development files
+.env*
+.gitignore
+.assetsignore
+package.json
+package-lock.json
+
+# Node dev server source (the new Worker replaces it)
+server.js
+db.js
+
+# Deployment manifests for other targets
+render.yaml
+
+# Windows launcher scripts
+*.bat
+
+# Docs (kept in the repo for humans, not served)
+*.md
+DEPLOY.md
+README.md
