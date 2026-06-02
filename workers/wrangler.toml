@@ -32,6 +32,15 @@ binding = "DB"
 database_name = "clinic-studio"
 database_id = "REPLACE_WITH_DATABASE_ID_FROM_WRANGLER_D1_CREATE"
 
+# Service binding to voicerx-api Worker. Required because both this
+# Worker and voicerx-api live on the same zone (winter-shadow-e82d
+# .workers.dev) — public-URL fetch() between them hits Cloudflare
+# error 1042 (routing loop). The service binding routes the
+# call internally and avoids the loop entirely.
+[[services]]
+binding = "VOICERX_API"
+service = "voicerx-api"
+
 # Secrets — set with `wrangler secret put NAME`:
 #   ANTHROPIC_API_KEY   - your sk-ant-... key
 #   ADMIN_EMAIL         - first-time admin login

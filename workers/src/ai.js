@@ -356,14 +356,21 @@ aiRouter.post('/extract', requireAuth, async (c) => {
 // =====================================================================
 async function voicerxFetch(env, path) {
   if (!env.VOICERX_TOKEN) return { ok: false, status: 503, json: { error: 'VoiceRx integration not configured — set VOICERX_TOKEN as a Worker secret.' } };
-  const base = (env.VOICERX_API_URL || 'https://voicerx-api.winter-shadow-e82d.workers.dev').replace(/\/+$/, '');
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 15000);
   try {
-    const r = await fetch(base + path, {
+    // Prefer the Service Binding to voicerx-api when available — this
+    // avoids Cloudflare error 1042 (Worker-to-Worker routing loop on
+    // the same zone). Fall back to the public URL when the binding
+    // isn't wired (e.g. local dev without a service binding).
+    const url = (env.VOICERX_API_URL || 'https://voicerx-api.winter-shadow-e82d.workers.dev').replace(/\/+$/, '') + path;
+    const init = {
       headers: { Authorization: 'Bearer ' + env.VOICERX_TOKEN },
       signal: controller.signal,
-    });
+    };
+    const r = env.VOICERX_API
+      ? await env.VOICERX_API.fetch(new Request(url, init))
+      : await fetch(url, init);
     clearTimeout(timeout);
     const text = await r.text();
     let parsed; try { parsed = JSON.parse(text); } catch { parsed = { raw: text }; }
