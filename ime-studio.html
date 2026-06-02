@@ -108,6 +108,33 @@
             </div>
           </div>
 
+          <div class="ime-tracker__dates">
+            <div class="ime-tracker__date">
+              <label for="trackerRetainerDate">Retainer received</label>
+              <input id="trackerRetainerDate" type="date" />
+            </div>
+            <div class="ime-tracker__date">
+              <label for="trackerRecordsDate">Records received</label>
+              <input id="trackerRecordsDate" type="date" />
+            </div>
+            <div class="ime-tracker__date">
+              <label for="trackerSoftDeadline">
+                Soft deadline
+                <span class="ime-tracker__date-hint">(+7 business days)</span>
+              </label>
+              <input id="trackerSoftDeadline" type="date" />
+            </div>
+            <div class="ime-tracker__date">
+              <label for="trackerHardDeadline">
+                Hard deadline
+                <span class="ime-tracker__date-hint">(+10 business days)</span>
+              </label>
+              <input id="trackerHardDeadline" type="date" />
+            </div>
+          </div>
+
+          <div class="ime-tracker__deadline-status" id="trackerDeadlineStatus" hidden></div>
+
           <div class="ime-tracker__row">
             <div class="ime-tracker__timer">
               <button type="button" class="btn btn--primary" id="trackerToggle">Start timer</button>

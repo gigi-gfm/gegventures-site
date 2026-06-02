@@ -428,7 +428,50 @@
     var totalHoursEl = document.getElementById('trackerTotalHours');
     var billedEl = document.getElementById('trackerBilled');
     var balanceEl = document.getElementById('trackerBalance');
+    var retainerDateEl = document.getElementById('trackerRetainerDate');
+    var recordsDateEl = document.getElementById('trackerRecordsDate');
+    var softEl = document.getElementById('trackerSoftDeadline');
+    var hardEl = document.getElementById('trackerHardDeadline');
+    var statusEl = document.getElementById('trackerDeadlineStatus');
     if (!toggle || !caseInput) return;
+
+    function addBusinessDays(dateStr, n) {
+      if (!dateStr) return '';
+      var parts = dateStr.split('-');
+      var d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+      var added = 0;
+      while (added < n) {
+        d.setDate(d.getDate() + 1);
+        var day = d.getDay();
+        if (day !== 0 && day !== 6) added++;
+      }
+      return (
+        d.getFullYear() + '-' +
+        String(d.getMonth() + 1).padStart(2, '0') + '-' +
+        String(d.getDate()).padStart(2, '0')
+      );
+    }
+    function daysBetween(aStr, bStr) {
+      if (!aStr || !bStr) return null;
+      var a = new Date(aStr + 'T12:00:00');
+      var b = new Date(bStr + 'T12:00:00');
+      return Math.round((b - a) / (1000 * 60 * 60 * 24));
+    }
+    function todayISO() {
+      var d = new Date();
+      return (
+        d.getFullYear() + '-' +
+        String(d.getMonth() + 1).padStart(2, '0') + '-' +
+        String(d.getDate()).padStart(2, '0')
+      );
+    }
+    function formatHuman(iso) {
+      if (!iso) return '';
+      var parts = iso.split('-');
+      var d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+      var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+    }
 
     var STORE_KEY = 'ime_tracker_v1';
 
@@ -454,8 +497,23 @@
     }
     function getCase(store) {
       var k = caseKey();
-      if (!store.cases[k]) store.cases[k] = { entries: [], startedAt: 0 };
-      return store.cases[k];
+      if (!store.cases[k]) {
+        store.cases[k] = {
+          entries: [],
+          startedAt: 0,
+          retainerDate: '',
+          recordsDate: '',
+          softDeadline: '',
+          hardDeadline: '',
+        };
+      }
+      var c = store.cases[k];
+      // Migrate older records that pre-date the date fields
+      if (typeof c.retainerDate !== 'string') c.retainerDate = '';
+      if (typeof c.recordsDate !== 'string') c.recordsDate = '';
+      if (typeof c.softDeadline !== 'string') c.softDeadline = '';
+      if (typeof c.hardDeadline !== 'string') c.hardDeadline = '';
+      return c;
     }
     function fmtTime(seconds) {
       seconds = Math.max(0, Math.floor(seconds));
@@ -477,6 +535,51 @@
     function render() {
       var store = loadStore();
       var c = getCase(store);
+
+      // Date fields
+      if (retainerDateEl && document.activeElement !== retainerDateEl) {
+        retainerDateEl.value = c.retainerDate || '';
+      }
+      if (recordsDateEl && document.activeElement !== recordsDateEl) {
+        recordsDateEl.value = c.recordsDate || '';
+      }
+      if (softEl && document.activeElement !== softEl) {
+        softEl.value = c.softDeadline || '';
+      }
+      if (hardEl && document.activeElement !== hardEl) {
+        hardEl.value = c.hardDeadline || '';
+      }
+
+      // Deadline status banner
+      if (statusEl) {
+        statusEl.className = 'ime-tracker__deadline-status';
+        if (c.hardDeadline) {
+          var daysToHard = daysBetween(todayISO(), c.hardDeadline);
+          var daysToSoft = c.softDeadline ? daysBetween(todayISO(), c.softDeadline) : null;
+          var msg = '';
+          if (daysToHard < 0) {
+            msg = 'OVERDUE — hard deadline was ' + formatHuman(c.hardDeadline) +
+              ' (' + Math.abs(daysToHard) + ' day' + (Math.abs(daysToHard) === 1 ? '' : 's') + ' ago).';
+            statusEl.classList.add('is-overdue');
+          } else if (daysToHard === 0) {
+            msg = 'Hard deadline is TODAY (' + formatHuman(c.hardDeadline) + ').';
+            statusEl.classList.add('is-overdue');
+          } else if (daysToSoft !== null && daysToSoft < 0) {
+            msg = 'Past soft deadline (' + formatHuman(c.softDeadline) + '). ' +
+              daysToHard + ' day' + (daysToHard === 1 ? '' : 's') + ' until hard deadline (' + formatHuman(c.hardDeadline) + ').';
+            statusEl.classList.add('is-warning');
+          } else if (daysToSoft !== null) {
+            msg = daysToSoft + ' day' + (daysToSoft === 1 ? '' : 's') + ' until soft deadline (' + formatHuman(c.softDeadline) + '), ' +
+              daysToHard + ' until hard deadline (' + formatHuman(c.hardDeadline) + ').';
+          } else {
+            msg = daysToHard + ' day' + (daysToHard === 1 ? '' : 's') + ' until hard deadline (' + formatHuman(c.hardDeadline) + ').';
+          }
+          statusEl.textContent = msg;
+          statusEl.hidden = false;
+        } else {
+          statusEl.hidden = true;
+        }
+      }
 
       // Live timer
       var liveSeconds = 0;
@@ -593,6 +696,48 @@
       render();
     });
     caseInput.addEventListener('input', render);
+
+    if (retainerDateEl) {
+      retainerDateEl.addEventListener('change', function () {
+        var store = loadStore();
+        getCase(store).retainerDate = retainerDateEl.value;
+        saveStore(store);
+        render();
+      });
+    }
+
+    if (recordsDateEl) {
+      recordsDateEl.addEventListener('change', function () {
+        var store = loadStore();
+        var c = getCase(store);
+        c.recordsDate = recordsDateEl.value;
+        // Auto-fill the deadlines if they're empty.
+        if (c.recordsDate) {
+          if (!c.softDeadline) c.softDeadline = addBusinessDays(c.recordsDate, 7);
+          if (!c.hardDeadline) c.hardDeadline = addBusinessDays(c.recordsDate, 10);
+        }
+        saveStore(store);
+        render();
+      });
+    }
+
+    if (softEl) {
+      softEl.addEventListener('change', function () {
+        var store = loadStore();
+        getCase(store).softDeadline = softEl.value;
+        saveStore(store);
+        render();
+      });
+    }
+
+    if (hardEl) {
+      hardEl.addEventListener('change', function () {
+        var store = loadStore();
+        getCase(store).hardDeadline = hardEl.value;
+        saveStore(store);
+        render();
+      });
+    }
 
     // Restore last active case label.
     var store = loadStore();

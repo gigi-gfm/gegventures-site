@@ -306,6 +306,60 @@
   border-radius: 8px;
   font: inherit;
 }
+.ime-tracker__dates {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 14px;
+}
+@media (max-width: 800px) {
+  .ime-tracker__dates { grid-template-columns: repeat(2, 1fr); }
+}
+.ime-tracker__date label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+.ime-tracker__date input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font: inherit;
+}
+.ime-tracker__date-hint {
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  margin-left: 6px;
+}
+
+.ime-tracker__deadline-status {
+  background: var(--accent-soft);
+  border-left: 4px solid var(--accent);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.92rem;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+.ime-tracker__deadline-status.is-overdue {
+  background: #fde8e8;
+  border-left-color: #c53030;
+  color: #742a2a;
+}
+.ime-tracker__deadline-status.is-warning {
+  background: #fff8e1;
+  border-left-color: #b7791f;
+  color: #744210;
+}
+
 .ime-tracker__row {
   display: grid;
   grid-template-columns: auto 1fr;
