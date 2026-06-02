@@ -9,6 +9,7 @@ import {
   currentUser,
   requireAuth,
 } from './auth.js';
+import { casesRouter } from './cases.js';
 
 const app = new Hono();
 
@@ -17,7 +18,7 @@ app.get('/api/status', async (c) => {
   return c.json({
     status: 'Clinic Studio Worker running',
     version: '1.0.0',
-    stage: 3,
+    stage: 5,
     aiConfigured: !!c.env.ANTHROPIC_API_KEY,
     voicerxConfigured: !!c.env.VOICERX_TOKEN,
     dbConfigured: !!c.env.DB,
@@ -44,6 +45,9 @@ app.use('*', async (c, next) => {
 
 // ---- Auth routes (public) ----
 app.route('/api/auth', authRouter);
+
+// ---- Cases / time tracker / users admin ----
+app.route('/api', casesRouter);
 
 // ---- Sanity check for auth ----
 // Returns the user's name; uses requireAuth so this 401s if not logged in.
