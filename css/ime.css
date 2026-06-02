@@ -90,6 +90,11 @@
   position: fixed; inset: 0; z-index: 1000;
   display: flex; align-items: center; justify-content: center;
 }
+/* The HTML `hidden` attribute should hide the modal, but the
+   `.voicerx-modal { display: flex }` rule above has the same
+   specificity as the user-agent's `[hidden] { display: none }`
+   and wins the cascade. This targeted rule fixes that. */
+.voicerx-modal[hidden] { display: none; }
 .voicerx-modal__backdrop {
   position: absolute; inset: 0;
   background: rgba(20, 16, 12, 0.55);
