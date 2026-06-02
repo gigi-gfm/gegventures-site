@@ -1,0 +1,20 @@
+{
+  "name": "gegventures-clinic-studio-worker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Cloudflare Workers + D1 version of the Garcia Family Medicine clinic studio.",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:migrate:local": "wrangler d1 execute clinic-studio --local --file=./migrations/0001_init.sql",
+    "db:migrate:remote": "wrangler d1 execute clinic-studio --remote --file=./migrations/0001_init.sql"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": ">=0.70.0",
+    "hono": ">=4.6.0"
+  },
+  "devDependencies": {
+    "wrangler": ">=3.80.0"
+  }
+}

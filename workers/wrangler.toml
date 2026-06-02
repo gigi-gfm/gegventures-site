@@ -1,0 +1,46 @@
+# Garcia Family Medicine — Clinic Studio Worker
+#
+# This Worker hosts the IME Studio, Referral, RTW, Cases dashboard,
+# Users admin, and login/session UI. It serves the static HTML/CSS/JS
+# from ../public and the API routes from src/index.js.
+#
+# To deploy:
+#   1. wrangler login                  (one-time, opens browser)
+#   2. wrangler d1 create clinic-studio   (one-time, prints database_id)
+#   3. paste the database_id into [[d1_databases]] below
+#   4. npm run db:migrate:remote       (creates the tables)
+#   5. wrangler deploy
+
+name = "clinic-studio"
+main = "src/index.js"
+compatibility_date = "2026-05-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Static assets — HTML, CSS, JS — served straight from /public.
+# We mount everything from the repo root one level up so the existing
+# HTML files don't have to move.
+[assets]
+directory = "../"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+
+# D1 database for users, sessions, cases, time entries.
+# Run `wrangler d1 create clinic-studio` once and paste the printed
+# database_id below.
+[[d1_databases]]
+binding = "DB"
+database_name = "clinic-studio"
+database_id = "REPLACE_WITH_DATABASE_ID_FROM_WRANGLER_D1_CREATE"
+
+# Secrets — set with `wrangler secret put NAME`:
+#   ANTHROPIC_API_KEY   - your sk-ant-... key
+#   ADMIN_EMAIL         - first-time admin login
+#   ADMIN_PASSWORD      - first-time admin password (8+ chars)
+#   ADMIN_NAME          - display name
+#   SESSION_SECRET      - random 32+ char string for session token signing
+#   VOICERX_TOKEN       - per-provider token from voicerx-api
+#
+# Non-secret config:
+[vars]
+VOICERX_API_URL = "https://voicerx-api.winter-shadow-e82d.workers.dev"
+NODE_ENV = "production"
