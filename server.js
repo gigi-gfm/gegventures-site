@@ -62,9 +62,11 @@ function requireAdmin(req, res, next) {
 const PUBLIC_PAGES = new Set([
   '/login.html',
   '/login',
+  '/setup.html',
   '/api/auth/login',
   '/api/auth/me',
   '/api/auth/logout',
+  '/api/auth/setup',
   '/api/status',
   '/favicon.ico',
   // The original marketing site is still public:
@@ -91,6 +93,8 @@ const PROTECTED_API_EXCEPTIONS = new Set([
   '/api/auth/login',
   '/api/auth/me',
   '/api/auth/logout',
+  '/api/auth/setup',
+  '/api/auth/setup-available',
   '/api/status',
 ]);
 
@@ -997,6 +1001,31 @@ app.post('/api/generate', async (req, res) => {
 // =====================================================================
 // Authentication endpoints
 // =====================================================================
+// Setup endpoint: creates the first admin user when no users exist yet.
+// Becomes a no-op (and returns 403) as soon as any user exists, so it
+// cannot be used to take over an existing install.
+app.get('/api/auth/setup-available', (_req, res) => {
+  res.json({ available: dbm.listUsers().length === 0 });
+});
+app.post('/api/auth/setup', (req, res) => {
+  if (dbm.listUsers().length > 0) {
+    return res.status(403).json({ error: 'Setup is already complete. Use the login page.' });
+  }
+  try {
+    const user = dbm.createUser({
+      email: req.body?.email,
+      password: req.body?.password,
+      name: req.body?.name,
+      role: 'admin',
+    });
+    const { token } = dbm.createSession(user.id);
+    res.cookie(SESSION_COOKIE, token, COOKIE_OPTS);
+    res.json({ user });
+  } catch (err) {
+    res.status(400).json({ error: err.message || 'Could not create admin.' });
+  }
+});
+
 app.post('/api/auth/login', (req, res) => {
   const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
   const password = typeof req.body?.password === 'string' ? req.body.password : '';

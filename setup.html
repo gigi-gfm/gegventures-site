@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Set up admin | Garcia Family Medicine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .login-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: var(--bg-warm);
+    }
+    .login-card {
+      width: 100%;
+      max-width: 460px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 36px 32px;
+      box-shadow: var(--shadow);
+    }
+    .login-card h1 { font-size: 1.5rem; margin-bottom: 4px; }
+    .login-card .sub { color: var(--ink-soft); font-size: 0.95rem; margin-bottom: 24px; }
+    .login-card label {
+      display: block; font-weight: 700; font-size: 0.88rem;
+      margin: 14px 0 6px; color: var(--ink);
+    }
+    .login-card input {
+      width: 100%; padding: 11px 12px;
+      border: 1px solid var(--line); border-radius: 8px;
+      font: inherit;
+    }
+    .login-card input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+    .login-card button { width: 100%; margin-top: 18px; }
+    .login-err {
+      font-size: 0.9rem; min-height: 1.2em; margin-top: 10px;
+    }
+    .err { color: #b91c1c; }
+    .info { color: var(--ink-soft); font-size: 0.85rem; margin-top: 6px; }
+    .notice {
+      background: var(--accent-soft);
+      border-left: 4px solid var(--accent);
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 18px;
+      font-size: 0.9rem;
+      color: var(--ink);
+    }
+  </style>
+</head>
+<body>
+  <div class="login-wrap">
+    <form class="login-card" id="setupForm" hidden>
+      <h1>Welcome — let's set up your admin account</h1>
+      <p class="sub">This is the first user for your Garcia Family Medicine clinic studio. You'll be an admin.</p>
+      <div class="notice">
+        Use a strong password (8+ characters). You'll sign in with this email and password every time.
+      </div>
+      <label for="name">Your full name</label>
+      <input id="name" name="name" type="text" required />
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" autocomplete="username" required />
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" minlength="8" required />
+      <p class="info">Minimum 8 characters.</p>
+      <button type="submit" class="btn btn--primary" id="setupBtn">Create admin account</button>
+      <p class="login-err err" id="setupErr" role="status"></p>
+    </form>
+
+    <div class="login-card" id="alreadySetup" hidden>
+      <h1>Setup already complete</h1>
+      <p class="sub">An admin account already exists. Use the login page to sign in.</p>
+      <a class="btn btn--primary" style="display:block; text-align:center; text-decoration:none;" href="/login.html">Go to sign in</a>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var form = document.getElementById('setupForm');
+      var done = document.getElementById('alreadySetup');
+      var err = document.getElementById('setupErr');
+      var btn = document.getElementById('setupBtn');
+
+      fetch('/api/auth/setup-available')
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (d.available) form.hidden = false;
+          else done.hidden = false;
+        })
+        .catch(function () { form.hidden = false; });
+
+      form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        err.textContent = '';
+        btn.disabled = true; btn.textContent = 'Creating…';
+        try {
+          var res = await fetch('/api/auth/setup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: form.name.value.trim(),
+              email: form.email.value.trim(),
+              password: form.password.value,
+            }),
+          });
+          var data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Could not create admin.');
+          // Auto-signed in — go to cases.
+          window.location.href = '/cases.html';
+        } catch (e) {
+          err.textContent = e.message;
+          btn.disabled = false; btn.textContent = 'Create admin account';
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
