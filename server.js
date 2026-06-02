@@ -11,6 +11,10 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const MODEL = 'claude-opus-4-7';
 
+// Trust the first proxy hop (Render, Cloudflare) so req.protocol reflects
+// the user-facing HTTPS connection rather than the internal HTTP forward.
+app.set('trust proxy', 1);
+
 app.use(express.json({ limit: '400mb' }));
 app.use(cookieParser());
 
@@ -34,10 +38,14 @@ dbm.purgeExpiredSessions();
 setInterval(() => dbm.purgeExpiredSessions(), 60 * 60 * 1000).unref();
 
 const SESSION_COOKIE = 'geg_session';
+// In production (Render/Cloudflare), the user-facing connection is HTTPS so
+// cookies should be Secure. In local dev (npm start at http://localhost),
+// Secure cookies would be rejected so we leave it off.
+const IS_PROD = process.env.NODE_ENV === 'production';
 const COOKIE_OPTS = {
   httpOnly: true,
   sameSite: 'lax',
-  secure: false, // Cloudflare Tunnel terminates TLS; cookies flow over the tunnel.
+  secure: IS_PROD,
   path: '/',
   maxAge: 30 * 24 * 60 * 60 * 1000,
 };

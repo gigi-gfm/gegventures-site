@@ -1,0 +1,43 @@
+# Render Blueprint — Garcia Family Medicine Clinic Studio
+#
+# When you connect this repo to Render, the dashboard offers to
+# deploy from this blueprint. It configures the web service, the
+# persistent disk for the SQLite database, and the environment
+# variables we need.
+#
+# Secrets (ANTHROPIC_API_KEY, ADMIN_PASSWORD, VOICERX_TOKEN) are
+# marked sync: false so Render won't try to overwrite them on
+# blueprint updates — set those in the Render dashboard once.
+
+services:
+  - type: web
+    name: gegventures-clinic-studio
+    runtime: node
+    plan: starter
+    region: ohio
+    branch: claude/medical-records-evaluation-app-DLEYV
+    buildCommand: npm install
+    startCommand: npm start
+    autoDeploy: true
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATA_DIR
+        value: /var/data
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: ADMIN_NAME
+        sync: false
+      - key: VOICERX_TOKEN
+        sync: false
+      - key: VOICERX_API_URL
+        value: https://voicerx-api.winter-shadow-e82d.workers.dev
+    disk:
+      name: data
+      mountPath: /var/data
+      sizeGB: 1

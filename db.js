@@ -9,7 +9,10 @@ import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DATA_DIR = path.join(__dirname, 'data');
+// DATA_DIR can be overridden in production (Render mounts a persistent disk
+// at e.g. /var/data — set DATA_DIR=/var/data in the Render env vars so the
+// SQLite file survives deploys).
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 const DB_PATH = path.join(DATA_DIR, 'gegventures.db');
 

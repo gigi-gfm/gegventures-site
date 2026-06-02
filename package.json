@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "description": "Gegventures healthcare marketing site with AI patient-acquisition tools for Garcia Family Medicine",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "start": "node server.js"
   },
