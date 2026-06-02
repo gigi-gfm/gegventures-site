@@ -19,7 +19,7 @@ app.get('/api/status', async (c) => {
   return c.json({
     status: 'Clinic Studio Worker running',
     version: '1.0.0',
-    stage: 7,
+    stage: 9,
     aiConfigured: !!c.env.ANTHROPIC_API_KEY,
     voicerxConfigured: !!c.env.VOICERX_TOKEN,
     dbConfigured: !!c.env.DB,

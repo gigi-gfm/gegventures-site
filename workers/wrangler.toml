@@ -16,13 +16,13 @@ main = "src/index.js"
 compatibility_date = "2026-05-01"
 compatibility_flags = ["nodejs_compat"]
 
-# Static assets — HTML, CSS, JS — served straight from /public.
-# We mount everything from the repo root one level up so the existing
-# HTML files don't have to move.
+# Static assets — HTML, CSS, JS — served straight from the repo root
+# so the existing HTML files (login.html, ime-studio.html, etc.) don't
+# have to move into a separate directory.
 [assets]
 directory = "../"
 binding = "ASSETS"
-not_found_handling = "single-page-application"
+not_found_handling = "404-page"
 
 # D1 database for users, sessions, cases, time entries.
 # Run `wrangler d1 create clinic-studio` once and paste the printed
