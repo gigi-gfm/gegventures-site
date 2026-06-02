@@ -409,6 +409,197 @@
     });
   }
 
+  // -------- Case time tracker --------
+  // Tracks billable hours per case. Persists to localStorage so it survives
+  // page reloads and tab close/reopen. One "case" is identified by the label
+  // typed in the Case label field (defaults to "default").
+  (function setupTracker() {
+    var HOURLY_RATE = 300;
+    var RETAINER = 1500;
+    var caseInput = document.getElementById('trackerCase');
+    var toggle = document.getElementById('trackerToggle');
+    var live = document.getElementById('trackerLive');
+    var actInput = document.getElementById('trackerActivity');
+    var hoursInput = document.getElementById('trackerHours');
+    var addBtn = document.getElementById('trackerAdd');
+    var resetBtn = document.getElementById('trackerReset');
+    var table = document.getElementById('trackerTable');
+    var entriesBody = document.getElementById('trackerEntries');
+    var totalHoursEl = document.getElementById('trackerTotalHours');
+    var billedEl = document.getElementById('trackerBilled');
+    var balanceEl = document.getElementById('trackerBalance');
+    if (!toggle || !caseInput) return;
+
+    var STORE_KEY = 'ime_tracker_v1';
+
+    function loadStore() {
+      try {
+        var raw = localStorage.getItem(STORE_KEY);
+        if (!raw) return { cases: {}, activeCase: '' };
+        var data = JSON.parse(raw);
+        if (!data.cases) data.cases = {};
+        return data;
+      } catch (e) {
+        return { cases: {}, activeCase: '' };
+      }
+    }
+    function saveStore(store) {
+      try {
+        localStorage.setItem(STORE_KEY, JSON.stringify(store));
+      } catch (e) { /* full or denied — ignore */ }
+    }
+    function caseKey() {
+      var v = caseInput.value.trim();
+      return v || 'default';
+    }
+    function getCase(store) {
+      var k = caseKey();
+      if (!store.cases[k]) store.cases[k] = { entries: [], startedAt: 0 };
+      return store.cases[k];
+    }
+    function fmtTime(seconds) {
+      seconds = Math.max(0, Math.floor(seconds));
+      var h = Math.floor(seconds / 3600);
+      var m = Math.floor((seconds % 3600) / 60);
+      var s = seconds % 60;
+      return (
+        String(h).padStart(2, '0') + ':' +
+        String(m).padStart(2, '0') + ':' +
+        String(s).padStart(2, '0')
+      );
+    }
+    function fmtMoney(n) {
+      var neg = n < 0;
+      var abs = Math.abs(n).toFixed(2);
+      return (neg ? '−$' : '$') + abs.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+
+    function render() {
+      var store = loadStore();
+      var c = getCase(store);
+
+      // Live timer
+      var liveSeconds = 0;
+      if (c.startedAt) {
+        liveSeconds = (Date.now() - c.startedAt) / 1000;
+        toggle.textContent = 'Stop timer';
+        toggle.classList.add('btn--ghost');
+        toggle.classList.remove('btn--primary');
+      } else {
+        toggle.textContent = 'Start timer';
+        toggle.classList.add('btn--primary');
+        toggle.classList.remove('btn--ghost');
+      }
+      live.textContent = fmtTime(liveSeconds);
+
+      // Entries table
+      entriesBody.innerHTML = '';
+      if (!c.entries.length) {
+        table.hidden = true;
+      } else {
+        table.hidden = false;
+        c.entries.forEach(function (e, idx) {
+          var tr = document.createElement('tr');
+          tr.innerHTML =
+            '<td>' + (e.date || '') + '</td>' +
+            '<td>' + (e.activity || '').replace(/[<>&]/g, function (ch) {
+              return { '<': '&lt;', '>': '&gt;', '&': '&amp;' }[ch];
+            }) + '</td>' +
+            '<td>' + Number(e.hours).toFixed(2) + '</td>' +
+            '<td><button type="button" data-remove="' + idx + '">Remove</button></td>';
+          entriesBody.appendChild(tr);
+        });
+        entriesBody.querySelectorAll('button[data-remove]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var i = Number(btn.getAttribute('data-remove'));
+            var s = loadStore();
+            var cc = getCase(s);
+            cc.entries.splice(i, 1);
+            saveStore(s);
+            render();
+          });
+        });
+      }
+
+      // Totals
+      var loggedHours = c.entries.reduce(function (sum, e) {
+        return sum + (Number(e.hours) || 0);
+      }, 0);
+      var liveHours = liveSeconds / 3600;
+      var totalHours = loggedHours + liveHours;
+      var billed = totalHours * HOURLY_RATE;
+      var balance = billed - RETAINER;
+      totalHoursEl.textContent = totalHours.toFixed(2);
+      billedEl.textContent = fmtMoney(billed);
+      balanceEl.textContent = fmtMoney(balance);
+    }
+
+    // Live tick while a timer is running.
+    setInterval(function () {
+      var store = loadStore();
+      if (getCase(store).startedAt) render();
+    }, 1000);
+
+    toggle.addEventListener('click', function () {
+      var store = loadStore();
+      var c = getCase(store);
+      if (c.startedAt) {
+        // Stop — convert elapsed to a logged entry rounded to nearest 0.25 hr
+        var elapsedHours = (Date.now() - c.startedAt) / 1000 / 3600;
+        var rounded = Math.round(elapsedHours * 4) / 4;
+        if (rounded > 0) {
+          c.entries.push({
+            date: new Date().toISOString().slice(0, 10),
+            activity: 'Timer session',
+            hours: rounded,
+          });
+        }
+        c.startedAt = 0;
+      } else {
+        c.startedAt = Date.now();
+      }
+      saveStore(store);
+      render();
+    });
+
+    addBtn.addEventListener('click', function () {
+      var hours = Number(hoursInput.value);
+      if (!hours || hours <= 0) return;
+      var store = loadStore();
+      var c = getCase(store);
+      c.entries.push({
+        date: new Date().toISOString().slice(0, 10),
+        activity: (actInput.value || 'Activity').trim(),
+        hours: hours,
+      });
+      saveStore(store);
+      actInput.value = '';
+      hoursInput.value = '';
+      render();
+    });
+
+    resetBtn.addEventListener('click', function () {
+      if (!confirm('Reset the tracker for "' + caseKey() + '"? This deletes all logged entries for this case.')) return;
+      var store = loadStore();
+      delete store.cases[caseKey()];
+      saveStore(store);
+      render();
+    });
+
+    caseInput.addEventListener('change', function () {
+      var store = loadStore();
+      store.activeCase = caseKey();
+      saveStore(store);
+      render();
+    });
+    caseInput.addEventListener('input', render);
+
+    // Restore last active case label.
+    var store = loadStore();
+    if (store.activeCase) caseInput.value = store.activeCase;
+    render();
+  })();
+
   // Default letter date to today, in "Month D, YYYY" format Dr. Garcia uses.
   var letterDateInput = document.getElementById('letterDate');
   if (letterDateInput && !letterDateInput.value) {

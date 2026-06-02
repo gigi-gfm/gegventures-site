@@ -208,6 +208,205 @@
   margin-top: 10px;
 }
 
+/* IME service terms (turnaround / rate / retainer) */
+.ime-fees {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  margin-bottom: 18px;
+}
+.ime-fees__head { margin-bottom: 16px; }
+.ime-fees__title {
+  font-weight: 800;
+  font-size: 1.05rem;
+  color: var(--ink);
+}
+.ime-fees__sub {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  margin-top: 2px;
+}
+.ime-fees__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+@media (max-width: 800px) {
+  .ime-fees__grid { grid-template-columns: 1fr; }
+}
+.ime-fees__item {
+  background: var(--bg-warm);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.ime-fees__label {
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+.ime-fees__value {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+.ime-fees__note {
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  margin-top: 4px;
+}
+
+/* Case time tracker */
+.ime-tracker {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  margin-bottom: 28px;
+}
+.ime-tracker__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.ime-tracker__title {
+  font-weight: 800;
+  font-size: 1.05rem;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.ime-tracker__sub {
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+  line-height: 1.5;
+  max-width: 420px;
+}
+.ime-tracker__case { min-width: 240px; }
+.ime-tracker__case label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+.ime-tracker__case input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font: inherit;
+}
+.ime-tracker__row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 24px;
+  align-items: end;
+  margin-bottom: 16px;
+}
+@media (max-width: 800px) {
+  .ime-tracker__row { grid-template-columns: 1fr; }
+}
+.ime-tracker__timer {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.ime-tracker__live {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--ink);
+  min-width: 110px;
+}
+.ime-tracker__manual label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+.ime-tracker__manual-row {
+  display: grid;
+  grid-template-columns: 1fr 100px auto;
+  gap: 8px;
+}
+.ime-tracker__manual-row input {
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font: inherit;
+}
+.ime-tracker__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  margin: 8px 0 18px;
+}
+.ime-tracker__table th,
+.ime-tracker__table td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+}
+.ime-tracker__table th {
+  font-weight: 700;
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.ime-tracker__table td:last-child { text-align: right; width: 60px; }
+.ime-tracker__table button {
+  background: none;
+  border: none;
+  color: var(--accent-dark);
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.84rem;
+}
+.ime-tracker__table button:hover { text-decoration: underline; }
+.ime-tracker__totals {
+  background: var(--bg-warm);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 14px;
+}
+.ime-tracker__total-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 0;
+  color: var(--ink-soft);
+  font-size: 0.96rem;
+}
+.ime-tracker__total-row span:last-child {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--ink);
+}
+.ime-tracker__total-row--final {
+  margin-top: 6px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-weight: 800;
+  color: var(--ink);
+  font-size: 1.05rem;
+}
+.ime-tracker__total-row--final span:last-child { color: var(--accent-dark); }
+.ime-tracker__actions { display: flex; justify-content: flex-end; }
+
 .ime-ref { max-width: 980px; margin: 0 auto; }
 .ime-ref h2 { margin-bottom: 8px; }
 .ime-ref > p { margin-bottom: 24px; }

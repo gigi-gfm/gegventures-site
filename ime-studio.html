@@ -69,6 +69,91 @@
           not findings they do not.
         </div>
 
+        <div class="ime-fees">
+          <div class="ime-fees__head">
+            <div class="ime-fees__title">IME service terms</div>
+            <div class="ime-fees__sub">Garcia Family Medicine &mdash; Independent Medical Evaluations</div>
+          </div>
+          <div class="ime-fees__grid">
+            <div class="ime-fees__item">
+              <div class="ime-fees__label">Turnaround</div>
+              <div class="ime-fees__value">7&ndash;10 business days</div>
+              <div class="ime-fees__note">from receipt of complete records</div>
+            </div>
+            <div class="ime-fees__item">
+              <div class="ime-fees__label">Hourly rate</div>
+              <div class="ime-fees__value">$300 / hour</div>
+              <div class="ime-fees__note">record review, exam, drafting</div>
+            </div>
+            <div class="ime-fees__item">
+              <div class="ime-fees__label">Retainer</div>
+              <div class="ime-fees__value">$1,500</div>
+              <div class="ime-fees__note">due at engagement, applied to final invoice</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ime-tracker" id="imeTracker">
+          <div class="ime-tracker__head">
+            <div>
+              <div class="ime-tracker__title">Case time tracker</div>
+              <div class="ime-tracker__sub">
+                Tracks billable hours on this case. Saved in your browser &mdash;
+                close the tab and come back, it&rsquo;ll still be here.
+              </div>
+            </div>
+            <div class="ime-tracker__case">
+              <label for="trackerCase">Case label</label>
+              <input id="trackerCase" type="text" placeholder="e.g. Mendez 22-079328" />
+            </div>
+          </div>
+
+          <div class="ime-tracker__row">
+            <div class="ime-tracker__timer">
+              <button type="button" class="btn btn--primary" id="trackerToggle">Start timer</button>
+              <span class="ime-tracker__live" id="trackerLive">00:00:00</span>
+            </div>
+            <div class="ime-tracker__manual">
+              <label for="trackerActivity">Log an activity</label>
+              <div class="ime-tracker__manual-row">
+                <input id="trackerActivity" type="text" placeholder="Record review / Exam / Drafting / Deposition prep" />
+                <input id="trackerHours" type="number" min="0" step="0.25" placeholder="Hours" />
+                <button type="button" class="btn btn--ghost" id="trackerAdd">Add</button>
+              </div>
+            </div>
+          </div>
+
+          <table class="ime-tracker__table" id="trackerTable" hidden>
+            <thead>
+              <tr><th>Date</th><th>Activity</th><th>Hours</th><th></th></tr>
+            </thead>
+            <tbody id="trackerEntries"></tbody>
+          </table>
+
+          <div class="ime-tracker__totals">
+            <div class="ime-tracker__total-row">
+              <span>Total hours</span>
+              <span id="trackerTotalHours">0.00</span>
+            </div>
+            <div class="ime-tracker__total-row">
+              <span>Hourly billing &times; $300</span>
+              <span id="trackerBilled">$0.00</span>
+            </div>
+            <div class="ime-tracker__total-row">
+              <span>Retainer applied</span>
+              <span id="trackerRetainer">&minus;$1,500.00</span>
+            </div>
+            <div class="ime-tracker__total-row ime-tracker__total-row--final">
+              <span>Balance due</span>
+              <span id="trackerBalance">&minus;$1,500.00</span>
+            </div>
+          </div>
+
+          <div class="ime-tracker__actions">
+            <button type="button" class="btn btn--ghost" id="trackerReset">Reset case timer</button>
+          </div>
+        </div>
+
         <div class="ime-upload" id="imeUpload">
           <div class="ime-upload__head">
             <div>
