@@ -56,6 +56,12 @@
         log.scrollTop = log.scrollHeight;
       });
       if (reply.trim()) {
+        // Render the finished reply as Markdown (links, lists, emphasis).
+        if (window.GegMD) {
+          bubble.classList.add('md');
+          bubble.innerHTML = GegMD.render(reply);
+          log.scrollTop = log.scrollHeight;
+        }
         messages.push({ role: 'assistant', content: reply });
       } else {
         bubble.textContent = 'Sorry — I had trouble responding. Please try again.';

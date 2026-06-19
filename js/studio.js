@@ -5,11 +5,13 @@
   var status = document.getElementById('studioStatus');
   var runBtn = document.getElementById('studioRun');
   var copyBtn = document.getElementById('studioCopy');
+  var downloadBtn = document.getElementById('studioDownload');
   var empty = document.getElementById('studioEmpty');
   var banner = document.getElementById('aiBanner');
   if (!form || !output) return;
 
   var busy = false;
+  var lastResult = '';
 
   function setBusy(state) {
     busy = state;
@@ -36,10 +38,11 @@
       return;
     }
 
-    output.textContent = '';
+    output.innerHTML = '';
     output.hidden = false;
     if (empty) empty.hidden = true;
     if (copyBtn) copyBtn.hidden = true;
+    if (downloadBtn) downloadBtn.hidden = true;
     if (status) status.textContent = 'Drafting with Claude…';
     setBusy(true);
 
@@ -47,14 +50,18 @@
     try {
       await GegAI.streamPost('/api/generate', body, function (chunk) {
         result += chunk;
-        output.textContent = result;
+        output.innerHTML = GegMD.render(result);
       });
+      lastResult = result;
       if (status) {
         status.textContent = result.trim()
           ? 'Draft ready — review and refine before publishing.'
           : 'No content was returned. Please try again.';
       }
-      if (copyBtn && result.trim()) copyBtn.hidden = false;
+      if (result.trim()) {
+        if (copyBtn) copyBtn.hidden = false;
+        if (downloadBtn) downloadBtn.hidden = false;
+      }
     } catch (err) {
       if (status) status.textContent = err.message || 'Generation failed. Please try again.';
     } finally {
@@ -64,7 +71,7 @@
 
   if (copyBtn) {
     copyBtn.addEventListener('click', function () {
-      navigator.clipboard.writeText(output.textContent).then(
+      navigator.clipboard.writeText(lastResult).then(
         function () {
           copyBtn.textContent = 'Copied';
           setTimeout(function () {
@@ -75,6 +82,21 @@
           if (status) status.textContent = 'Could not copy — select the text manually.';
         }
       );
+    });
+  }
+
+  if (downloadBtn) {
+    downloadBtn.addEventListener('click', function () {
+      if (!lastResult.trim()) return;
+      var blob = new Blob([lastResult], { type: 'text/markdown' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'content-draft.md';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     });
   }
 
