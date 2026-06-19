@@ -85,9 +85,12 @@
           <div class="studio__result">
             <div class="studio__result-head">
               <h3>Draft</h3>
-              <button type="button" class="btn btn--ghost" id="studioCopy" hidden>Copy</button>
+              <div class="studio__result-actions">
+                <button type="button" class="btn btn--ghost" id="studioDownload" hidden>Download .md</button>
+                <button type="button" class="btn btn--ghost" id="studioCopy" hidden>Copy</button>
+              </div>
             </div>
-            <pre class="studio__output" id="studioOutput" hidden></pre>
+            <div class="studio__output md" id="studioOutput" hidden></div>
             <p class="studio__empty" id="studioEmpty">
               Your generated draft will appear here. Everything is a starting point &mdash;
               review for accuracy and brand voice before publishing.
@@ -157,6 +160,7 @@
 
   <script src="js/main.js"></script>
   <script src="js/ai.js"></script>
+  <script src="js/md.js"></script>
   <script src="js/studio.js"></script>
 </body>
 </html>

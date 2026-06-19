@@ -1,0 +1,16 @@
+# One-click deploy to Render (https://render.com).
+# In the Render dashboard: New > Blueprint, point it at this repo, then set
+# the ANTHROPIC_API_KEY value when prompted (it is intentionally not stored here).
+services:
+  - type: web
+    name: gegventures-site
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/status
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: NODE_VERSION
+        value: "20"

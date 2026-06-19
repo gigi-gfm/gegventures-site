@@ -5,6 +5,7 @@
   var status = document.getElementById('seoStatus');
   var runBtn = document.getElementById('seoRun');
   var copyBtn = document.getElementById('seoCopy');
+  var downloadBtn = document.getElementById('seoDownload');
   var empty = document.getElementById('seoEmpty');
   var banner = document.getElementById('aiBanner');
   var mode = document.getElementById('mode');
@@ -13,6 +14,7 @@
   if (!form || !output) return;
 
   var busy = false;
+  var lastResult = '';
 
   // Tailor the keyword field to the selected mode.
   var FIELD = {
@@ -86,10 +88,11 @@
       return;
     }
 
-    output.textContent = '';
+    output.innerHTML = '';
     output.hidden = false;
     if (empty) empty.hidden = true;
     if (copyBtn) copyBtn.hidden = true;
+    if (downloadBtn) downloadBtn.hidden = true;
     if (status) status.textContent = 'Building your organic-traffic plan with Claude…';
     setBusy(true);
 
@@ -97,14 +100,18 @@
     try {
       await GegAI.streamPost('/api/seo', body, function (chunk) {
         result += chunk;
-        output.textContent = result;
+        output.innerHTML = GegMD.render(result);
       });
+      lastResult = result;
       if (status) {
         status.textContent = result.trim()
           ? 'Plan ready — verify estimated demand in a keyword tool before you commit.'
           : 'No plan was returned. Please try again.';
       }
-      if (copyBtn && result.trim()) copyBtn.hidden = false;
+      if (result.trim()) {
+        if (copyBtn) copyBtn.hidden = false;
+        if (downloadBtn) downloadBtn.hidden = false;
+      }
     } catch (err) {
       if (status) status.textContent = err.message || 'The engine failed. Please try again.';
     } finally {
@@ -114,7 +121,7 @@
 
   if (copyBtn) {
     copyBtn.addEventListener('click', function () {
-      navigator.clipboard.writeText(output.textContent).then(
+      navigator.clipboard.writeText(lastResult).then(
         function () {
           copyBtn.textContent = 'Copied';
           setTimeout(function () {
@@ -125,6 +132,21 @@
           if (status) status.textContent = 'Could not copy — select the text manually.';
         }
       );
+    });
+  }
+
+  if (downloadBtn) {
+    downloadBtn.addEventListener('click', function () {
+      if (!lastResult.trim()) return;
+      var blob = new Blob([lastResult], { type: 'text/markdown' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'seo-plan.md';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     });
   }
 

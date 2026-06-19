@@ -94,9 +94,12 @@
           <div class="studio__result">
             <div class="studio__result-head">
               <h3>Your plan</h3>
-              <button type="button" class="btn btn--ghost" id="seoCopy" hidden>Copy</button>
+              <div class="studio__result-actions">
+                <button type="button" class="btn btn--ghost" id="seoDownload" hidden>Download .md</button>
+                <button type="button" class="btn btn--ghost" id="seoCopy" hidden>Copy</button>
+              </div>
             </div>
-            <pre class="studio__output" id="seoOutput" hidden></pre>
+            <div class="studio__output md" id="seoOutput" hidden></div>
             <p class="studio__empty" id="seoEmpty">
               Your organic-traffic plan will appear here. Every recommendation targets
               free Google traffic &mdash; verify estimated demand in Google Search Console,
@@ -193,6 +196,7 @@
 
   <script src="js/main.js"></script>
   <script src="js/ai.js"></script>
+  <script src="js/md.js"></script>
   <script src="js/seo.js"></script>
 </body>
 </html>
